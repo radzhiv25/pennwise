@@ -2,7 +2,12 @@ import PropTypes from "prop-types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const TransactionList = ({ transactions, onEdit, onDelete }) => {
+const TransactionList = ({ transactions, onEdit, onDelete, selectedCurrency }) => {
+  // Filter transactions by selected currency
+  const filteredTransactions = transactions.filter(transaction =>
+    (transaction.currency || 'INR') === selectedCurrency
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -13,10 +18,10 @@ const TransactionList = ({ transactions, onEdit, onDelete }) => {
       </CardHeader>
       <CardContent>
         <div className="max-h-96 overflow-y-auto space-y-3">
-          {transactions.length === 0 ? (
+          {filteredTransactions.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">No transactions yet. Add your first transaction above!</p>
           ) : (
-            transactions.map((transaction, index) => (
+            filteredTransactions.map((transaction, index) => (
               <Card key={index} className="border-l-4 border-l-green-500" style={{ borderLeftColor: transaction.type === 'income' ? '#10b981' : '#ef4444' }}>
                 <CardContent className="pt-3">
                   <div className="flex justify-between items-start">
@@ -74,6 +79,7 @@ TransactionList.propTypes = {
   transactions: PropTypes.array.isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
+  selectedCurrency: PropTypes.string.isRequired,
 };
 
 export default TransactionList;

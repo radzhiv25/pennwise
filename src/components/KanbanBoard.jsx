@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from "prop-types";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -184,7 +185,7 @@ const KanbanColumn = ({ status, transactions, onEdit, onDelete }) => {
     );
 };
 
-const KanbanBoard = ({ transactions, onEdit, onDelete, onStatusChange }) => {
+const KanbanBoard = ({ transactions, onEdit, onDelete, onStatusChange, selectedCurrency }) => {
     const [activeId, setActiveId] = React.useState(null);
 
     const sensors = useSensors(
@@ -194,8 +195,13 @@ const KanbanBoard = ({ transactions, onEdit, onDelete, onStatusChange }) => {
         })
     );
 
+    // Filter transactions by selected currency
+    const filteredTransactions = transactions.filter(transaction =>
+        (transaction.currency || 'INR') === selectedCurrency
+    );
+
     // Group transactions by status
-    const groupedTransactions = transactions.reduce((acc, transaction) => {
+    const groupedTransactions = filteredTransactions.reduce((acc, transaction) => {
         if (!acc[transaction.status]) {
             acc[transaction.status] = [];
         }
@@ -271,7 +277,7 @@ const KanbanBoard = ({ transactions, onEdit, onDelete, onStatusChange }) => {
                     </div>
                     <DragOverlay>
                         {activeId ? (() => {
-                            const draggingTransaction = transactions.find(t => t.id === activeId);
+                            const draggingTransaction = filteredTransactions.find(t => t.id === activeId);
                             return draggingTransaction ? (
                                 <div className="p-2 bg-card border rounded-lg shadow-lg opacity-90 max-w-xs">
                                     <div className="flex items-center gap-2">
@@ -297,6 +303,14 @@ const KanbanBoard = ({ transactions, onEdit, onDelete, onStatusChange }) => {
             </CardContent>
         </Card>
     );
+};
+
+KanbanBoard.propTypes = {
+    transactions: PropTypes.array.isRequired,
+    onEdit: PropTypes.func.isRequired,
+    onDelete: PropTypes.func.isRequired,
+    onStatusChange: PropTypes.func.isRequired,
+    selectedCurrency: PropTypes.string.isRequired,
 };
 
 export default KanbanBoard;
