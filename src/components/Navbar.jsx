@@ -6,7 +6,7 @@ import { Moon, Sun } from "lucide-react";
 
 const Navbar = ({ isDarkMode, onToggleDarkMode, selectedCurrency, onCurrencyChange }) => {
   return (
-    <div className="my-5 p-3 border border-gray-200 dark:border-gray-700 rounded-md flex justify-between items-center">
+    <div className="sticky top-5 bg-white-50 z-50 backdrop-blur-sm p-3 border border-gray-200 dark:border-gray-700 rounded-md flex justify-between items-center">
       <span className="leading-none">
         <h1 className="text-2xl font-semibold leading-none bg-gradient-to-br from-gray-300 via-black dark:from-gray-100 dark:via-white text-transparent bg-clip-text">
           PennWise
