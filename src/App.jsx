@@ -5,15 +5,22 @@ import TransactionForm from "./components/TransactionForm";
 
 function App({ amount }) {
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const [selectedCurrency, setSelectedCurrency] = useState('INR');
 
     useEffect(() => {
         // Check for saved theme preference or default to light mode
         const savedTheme = localStorage.getItem('theme');
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const shouldUseDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
-
+        
         setIsDarkMode(shouldUseDark);
         document.documentElement.classList.toggle('dark', shouldUseDark);
+
+        // Check for saved currency preference
+        const savedCurrency = localStorage.getItem('selectedCurrency');
+        if (savedCurrency) {
+            setSelectedCurrency(savedCurrency);
+        }
     }, []);
 
     const toggleDarkMode = () => {
@@ -23,12 +30,22 @@ function App({ amount }) {
         localStorage.setItem('theme', newDarkMode ? 'dark' : 'light');
     };
 
+    const handleCurrencyChange = (currency) => {
+        setSelectedCurrency(currency);
+        localStorage.setItem('selectedCurrency', currency);
+    };
+
     return (
         <div className="min-h-screen bg-background dark:bg-black">
             <div className="container mx-auto px-4 py-8 max-w-6xl">
-                <Navbar isDarkMode={isDarkMode} onToggleDarkMode={toggleDarkMode} />
+                <Navbar 
+                    isDarkMode={isDarkMode} 
+                    onToggleDarkMode={toggleDarkMode}
+                    selectedCurrency={selectedCurrency}
+                    onCurrencyChange={handleCurrencyChange}
+                />
                 <main className="mt-8">
-                    <TransactionForm />
+                    <TransactionForm selectedCurrency={selectedCurrency} />
                 </main>
                 <Footer />
             </div>

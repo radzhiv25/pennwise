@@ -1,9 +1,10 @@
 import PropTypes from "prop-types";
 import { FaGithub } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Moon, Sun } from "lucide-react";
 
-const Navbar = ({ isDarkMode, onToggleDarkMode }) => {
+const Navbar = ({ isDarkMode, onToggleDarkMode, selectedCurrency, onCurrencyChange }) => {
   return (
     <div className="my-5 p-3 border border-gray-200 dark:border-gray-700 rounded-md flex justify-between items-center">
       <span className="leading-none">
@@ -13,6 +14,19 @@ const Navbar = ({ isDarkMode, onToggleDarkMode }) => {
         <p className="text-xs text-muted-foreground">manage expense in clicks</p>
       </span>
       <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Currency:</span>
+          <Select value={selectedCurrency} onValueChange={onCurrencyChange}>
+            <SelectTrigger className="w-320 h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="INR">₹ INR</SelectItem>
+              <SelectItem value="USD">$ USD</SelectItem>
+              <SelectItem value="GBP">£ GBP</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <a href="https://github.com/radzhiv25/expense-tracker">
           <FaGithub className="size-8 hover:text-gray-500 dark:hover:text-gray-400 transition-colors" />
         </a>
@@ -32,6 +46,8 @@ const Navbar = ({ isDarkMode, onToggleDarkMode }) => {
 Navbar.propTypes = {
   isDarkMode: PropTypes.bool.isRequired,
   onToggleDarkMode: PropTypes.func.isRequired,
+  selectedCurrency: PropTypes.string.isRequired,
+  onCurrencyChange: PropTypes.func.isRequired,
 };
 
 export default Navbar;
