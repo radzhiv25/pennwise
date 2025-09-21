@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import Summary from "./Summary";
 import TransactionList from "./TransactionList";
 import Chart from "./Chart";
@@ -16,14 +17,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Database, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 
-const TransactionForm = () => {
+const TransactionForm = ({ selectedCurrency }) => {
   const [amount, setAmount] = useState(0);
   const [type, setType] = useState("income");
   const [category, setCategory] = useState("");
   const [date, setDate] = useState(new Date());
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("todo");
-  const [currency, setCurrency] = useState("INR");
   const [transactions, setTransactions] = useState([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
@@ -47,7 +47,7 @@ const TransactionForm = () => {
       date: format(date, 'yyyy-MM-dd'),
       description,
       status,
-      currency,
+      currency: selectedCurrency,
     };
 
     // Add the new transaction to the array
@@ -150,28 +150,15 @@ const TransactionForm = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount</Label>
-                <div className="flex gap-2">
-                  <Input
-                    type="number"
-                    id="amount"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0.00"
-                    required
-                    className="flex-1"
-                  />
-                  <Select value={currency} onValueChange={setCurrency}>
-                    <SelectTrigger className="w-20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="INR">₹ INR</SelectItem>
-                      <SelectItem value="USD">$ USD</SelectItem>
-                      <SelectItem value="GBP">£ GBP</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Label htmlFor="amount">Amount ({selectedCurrency === 'USD' ? '$' : selectedCurrency === 'GBP' ? '£' : '₹'})</Label>
+                <Input
+                  type="number"
+                  id="amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
@@ -273,15 +260,16 @@ const TransactionForm = () => {
           </div>
         </CardContent>
       </Card>
-      <Summary transactions={transactions} />
-      <Chart transactions={transactions} />
+      <Summary transactions={transactions} selectedCurrency={selectedCurrency} />
+      <Chart transactions={transactions} selectedCurrency={selectedCurrency} />
       <KanbanBoard
         transactions={transactions}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onStatusChange={handleStatusChange}
+        selectedCurrency={selectedCurrency}
       />
-      <TransactionList transactions={transactions} onEdit={handleEdit} onDelete={handleDelete} />
+      <TransactionList transactions={transactions} onEdit={handleEdit} onDelete={handleDelete} selectedCurrency={selectedCurrency} />
 
       <EditTransactionDialog
         isOpen={isEditDialogOpen}
@@ -291,6 +279,10 @@ const TransactionForm = () => {
       />
     </div>
   );
+};
+
+TransactionForm.propTypes = {
+  selectedCurrency: PropTypes.string.isRequired,
 };
 
 export default TransactionForm;
