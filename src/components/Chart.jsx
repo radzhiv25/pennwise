@@ -1,15 +1,21 @@
 import React, { useState } from 'react';
+import PropTypes from "prop-types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { BarChart3, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
 
-const Chart = ({ transactions }) => {
+const Chart = ({ transactions, selectedCurrency }) => {
   const [chartType, setChartType] = useState('line');
 
+  // Filter transactions by selected currency
+  const filteredTransactions = transactions.filter(transaction =>
+    (transaction.currency || 'INR') === selectedCurrency
+  );
+
   // Group transactions by date and calculate daily totals
-  const groupedData = transactions.reduce((acc, transaction) => {
+  const groupedData = filteredTransactions.reduce((acc, transaction) => {
     const date = transaction.date;
     if (!acc[date]) {
       acc[date] = { date, income: 0, expense: 0 };
@@ -26,7 +32,7 @@ const Chart = ({ transactions }) => {
   const lineChartData = Object.values(groupedData).sort((a, b) => new Date(a.date) - new Date(b.date));
 
   // Process data for pie chart (category breakdown)
-  const pieChartData = transactions.reduce((acc, transaction) => {
+  const pieChartData = filteredTransactions.reduce((acc, transaction) => {
     const category = transaction.category;
     if (!acc[category]) {
       acc[category] = { name: category, value: 0, type: transaction.type };
@@ -38,7 +44,7 @@ const Chart = ({ transactions }) => {
   const pieData = Object.values(pieChartData).sort((a, b) => b.value - a.value);
 
   // Process data for bar chart (monthly comparison)
-  const monthlyData = transactions.reduce((acc, transaction) => {
+  const monthlyData = filteredTransactions.reduce((acc, transaction) => {
     const date = new Date(transaction.date);
     const month = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
     if (!acc[month]) {
@@ -236,6 +242,11 @@ const Chart = ({ transactions }) => {
       </CardContent>
     </Card>
   );
+};
+
+Chart.propTypes = {
+  transactions: PropTypes.array.isRequired,
+  selectedCurrency: PropTypes.string.isRequired,
 };
 
 export default Chart;
