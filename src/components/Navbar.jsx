@@ -3,8 +3,20 @@ import { FaGithub } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Moon, Sun } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { signOut } from "@/lib/supabaseClient";
 
-const Navbar = ({ isDarkMode, onToggleDarkMode, selectedCurrency, onCurrencyChange }) => {
+const Navbar = ({ isDarkMode, onToggleDarkMode, selectedCurrency, onCurrencyChange, onSignOut }) => {
+  const { user } = useAuth();
+
+  const handleSignOut = async () => {
+    if (onSignOut) {
+      await onSignOut();
+    } else {
+      await signOut();
+    }
+  };
+
   return (
     <div className="sticky top-5 bg-white-50 z-50 backdrop-blur-sm p-3 border border-gray-200 dark:border-gray-700 rounded-md flex justify-between items-center">
       <span className="leading-none">
@@ -38,6 +50,11 @@ const Navbar = ({ isDarkMode, onToggleDarkMode, selectedCurrency, onCurrencyChan
         >
           {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
+        {user && (
+          <Button variant="ghost" size="sm" onClick={handleSignOut}>
+            Sign Out
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -48,6 +65,11 @@ Navbar.propTypes = {
   onToggleDarkMode: PropTypes.func.isRequired,
   selectedCurrency: PropTypes.string.isRequired,
   onCurrencyChange: PropTypes.func.isRequired,
+  onSignOut: PropTypes.func,
+};
+
+Navbar.defaultProps = {
+  onSignOut: undefined,
 };
 
 export default Navbar;

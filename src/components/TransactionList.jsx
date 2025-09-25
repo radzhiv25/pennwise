@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const TransactionList = ({ transactions, onEdit, onDelete, selectedCurrency }) => {
+const TransactionList = ({ transactions, onEdit, onDelete, selectedCurrency, isLoading }) => {
   // Filter transactions by selected currency
   const filteredTransactions = transactions.filter(transaction =>
     (transaction.currency || 'INR') === selectedCurrency
@@ -18,7 +18,9 @@ const TransactionList = ({ transactions, onEdit, onDelete, selectedCurrency }) =
       </CardHeader>
       <CardContent>
         <div className="max-h-96 overflow-y-auto space-y-3">
-          {filteredTransactions.length === 0 ? (
+          {isLoading ? (
+            <p className="text-center text-muted-foreground py-8">Loading transactions...</p>
+          ) : filteredTransactions.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">No transactions yet. Add your first transaction above!</p>
           ) : (
             filteredTransactions.map((transaction, index) => (
@@ -80,6 +82,11 @@ TransactionList.propTypes = {
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
   selectedCurrency: PropTypes.string.isRequired,
+  isLoading: PropTypes.bool,
+};
+
+TransactionList.defaultProps = {
+  isLoading: false,
 };
 
 export default TransactionList;

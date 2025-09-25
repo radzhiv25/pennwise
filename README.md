@@ -71,6 +71,18 @@ To get a local copy up and running, follow these simple steps:
 - **Tailwind CSS**: A utility-first CSS framework for rapid UI development.
 - **Chart.js**: A popular JavaScript library for creating charts to visualize your data.
 - **React Icons**: A library of popular icons for React applications.
+- **Supabase**: Managed Postgres database for persisting transactions and preferences.
+
+## Environment Variables
+
+Create a `.env` file at the project root with the following variables (these are required for Supabase connectivity):
+
+```
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+Refer to the [Supabase documentation](https://supabase.com/docs/guides/getting-started/quickstarts) to obtain these values.
 
 ## Project Structure
 

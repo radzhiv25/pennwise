@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import Summary from "./Summary";
 import TransactionList from "./TransactionList";
@@ -6,6 +6,7 @@ import Chart from "./Chart";
 import EditTransactionDialog from "./EditTransactionDialog";
 import KanbanBoard from "./KanbanBoard";
 import { mockTransactions, categories } from "../mockData";
+import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,8 +17,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Database, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { useAuth } from "@/context/AuthContext";
 
 const TransactionForm = ({ selectedCurrency }) => {
+  const { user } = useAuth();
   const [amount, setAmount] = useState(0);
   const [type, setType] = useState("income");
   const [category, setCategory] = useState("");
@@ -27,112 +30,264 @@ const TransactionForm = ({ selectedCurrency }) => {
   const [transactions, setTransactions] = useState([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchTransactions = useCallback(async () => {
+    if (!user) {
+      setTransactions([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("date", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching transactions:", error);
+      setError("Failed to load transactions. Please try again.");
+      setTransactions([]);
+    } else {
+      setTransactions(data || []);
+    }
+
+    setIsLoading(false);
+  }, [user]);
 
   useEffect(() => {
-    const savedTransactions = JSON.parse(localStorage.getItem('transactions')) || [];
-    setTransactions(savedTransactions);
-  }, []);
+    fetchTransactions();
+  }, [fetchTransactions]);
+
+  const requireUser = () => {
+    if (!user) {
+      setError("You must be logged in to perform this action.");
+      return false;
+    }
+    return true;
+  };
 
   //   to submit the transaction
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Create a new transaction object
+    if (!requireUser()) return;
+
+    setIsSyncing(true);
+    setError(null);
+
     const newTransaction = {
-      id: Date.now().toString(), // Simple ID generation
+      user_id: user.id,
       type,
       amount: parseFloat(amount),
       category,
-      date: format(date, 'yyyy-MM-dd'),
+      date: format(date, "yyyy-MM-dd"),
       description,
       status,
       currency: selectedCurrency,
     };
 
-    // Add the new transaction to the array
-    const updatedTransactions = [...transactions, newTransaction];
+    const { data, error } = await supabase
+      .from("transactions")
+      .insert(newTransaction)
+      .select()
+      .single();
 
-    // Update the state and local storage
-    setTransactions(updatedTransactions);
-    localStorage.setItem('transactions', JSON.stringify(updatedTransactions));
+    if (error) {
+      console.error("Error adding transaction:", error);
+      setError("Failed to add transaction. Please try again.");
+    } else {
+      setTransactions((prev) => [data, ...prev]);
+      setAmount(0);
+      setCategory("");
+      setDate(new Date());
+      setDescription("");
+      setStatus("todo");
+    }
 
-    // Reset the form fields after submission
-    setAmount(0);
-    setCategory("");
-    setDate(new Date());
-    setDescription("");
-    setStatus("todo");
+    setIsSyncing(false);
   };
 
   //   to edit a transaction
   const handleEdit = (transaction) => {
-    const index = transactions.findIndex(t => t.id === transaction.id);
     setEditingTransaction(transaction);
-    setEditingIndex(index);
     setIsEditDialogOpen(true);
   };
 
   //   to delete a transaction
-  const handleDelete = (transaction) => {
-    const updatedTransactions = transactions.filter(t => t.id !== transaction.id);
-    setTransactions(updatedTransactions);
-    localStorage.setItem('transactions', JSON.stringify(updatedTransactions));
+  const handleDelete = async (transaction) => {
+    if (!requireUser()) return;
+
+    setIsSyncing(true);
+    setError(null);
+
+    const { error } = await supabase
+      .from("transactions")
+      .delete()
+      .eq("id", transaction.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Error deleting transaction:", error);
+      setError("Failed to delete transaction. Please try again.");
+    } else {
+      setTransactions((prev) => prev.filter((t) => t.id !== transaction.id));
+    }
+
+    setIsSyncing(false);
   };
 
   //   to save edited transaction
-  const handleSaveEdit = (updatedTransaction) => {
-    const updatedTransactions = transactions.map((transaction, index) =>
-      index === editingIndex ? updatedTransaction : transaction
-    );
-    setTransactions(updatedTransactions);
-    localStorage.setItem('transactions', JSON.stringify(updatedTransactions));
+  const handleSaveEdit = async (updatedTransaction) => {
+    if (!requireUser()) return;
+
+    setIsSyncing(true);
+    setError(null);
+
+    const { data, error } = await supabase
+      .from("transactions")
+      .update({
+        type: updatedTransaction.type,
+        amount: updatedTransaction.amount,
+        category: updatedTransaction.category,
+        date: updatedTransaction.date,
+        description: updatedTransaction.description,
+        status: updatedTransaction.status,
+        currency: updatedTransaction.currency,
+      })
+      .eq("id", updatedTransaction.id)
+      .eq("user_id", user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating transaction:", error);
+      setError("Failed to update transaction. Please try again.");
+    } else if (data) {
+      setTransactions((prev) =>
+        prev.map((transaction) =>
+          transaction.id === data.id ? data : transaction
+        )
+      );
+    }
+
+    setIsSyncing(false);
   };
 
   //   to close edit dialog
   const handleCloseEditDialog = () => {
     setIsEditDialogOpen(false);
     setEditingTransaction(null);
-    setEditingIndex(null);
   };
 
   //   to load mock data
-  const handleLoadMockData = () => {
-    setTransactions(mockTransactions);
-    localStorage.setItem('transactions', JSON.stringify(mockTransactions));
+  const handleLoadMockData = async () => {
+    if (!requireUser()) return;
+
+    setIsSyncing(true);
+    setError(null);
+
+    const payload = mockTransactions.map(({ id, ...rest }) => ({
+      user_id: user.id,
+      ...rest,
+    }));
+
+    const { data, error } = await supabase
+      .from("transactions")
+      .insert(payload)
+      .select();
+
+    if (error) {
+      console.error("Error loading mock data:", error);
+      setError("Failed to load mock data. Please try again.");
+    } else {
+      setTransactions((prev) => {
+        const existingIds = new Map(prev.map((t, index) => [t.id, index]));
+        const merged = [...prev];
+
+        data.forEach((transaction) => {
+          const existingIndex = existingIds.get(transaction.id);
+          if (existingIndex === undefined) {
+            merged.push(transaction);
+          } else {
+            merged[existingIndex] = transaction;
+          }
+        });
+
+        return merged.sort((a, b) => new Date(b.date) - new Date(a.date));
+      });
+    }
+
+    setIsSyncing(false);
   };
 
   //   to clear all data
-  const handleClearData = () => {
-    setTransactions([]);
-    localStorage.removeItem('transactions');
+  const handleClearData = async () => {
+    if (!requireUser()) return;
+
+    setIsSyncing(true);
+    setError(null);
+
+    const { error } = await supabase
+      .from("transactions")
+      .delete()
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Error clearing data:", error);
+      setError("Failed to clear data. Please try again.");
+    } else {
+      setTransactions([]);
+    }
+
+    setIsSyncing(false);
   };
 
   //   to handle status change from Kanban board
-  const handleStatusChange = (transactionId, newStatus) => {
-    console.log('Status change called:', { transactionId, newStatus });
-    console.log('Current transactions:', transactions);
+  const handleStatusChange = async (transactionId, newStatus) => {
+    if (!requireUser()) return;
 
-    const updatedTransactions = transactions.map(transaction =>
-      transaction.id === transactionId
-        ? { ...transaction, status: newStatus }
-        : transaction
-    );
+    setError(null);
 
-    console.log('Updated transactions:', updatedTransactions);
-    setTransactions(updatedTransactions);
-    localStorage.setItem('transactions', JSON.stringify(updatedTransactions));
+    const { data, error } = await supabase
+      .from("transactions")
+      .update({ status: newStatus })
+      .eq("id", transactionId)
+      .eq("user_id", user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating status:", error);
+      setError("Failed to update transaction status. Please try again.");
+    } else if (data) {
+      setTransactions((prev) =>
+        prev.map((transaction) =>
+          transaction.id === data.id ? data : transaction
+        )
+      );
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* transaction form to enter the amount */}
       <Card>
         <CardHeader>
           <CardTitle>Add Transaction</CardTitle>
           <CardDescription>
             Enter your income or expense details below.
           </CardDescription>
+          {error && (
+            <p className="text-sm text-red-500 mt-2">
+              {error}
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -221,14 +376,13 @@ const TransactionForm = ({ selectedCurrency }) => {
                 rows="3"
               />
             </div>
-            <Button type="submit" className="w-max">
-              Add Transaction
+            <Button type="submit" className="w-max" disabled={isSyncing}>
+              {isSyncing ? "Saving..." : "Add Transaction"}
             </Button>
           </form>
         </CardContent>
       </Card>
 
-      {/* Mock Data Controls */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -245,6 +399,7 @@ const TransactionForm = ({ selectedCurrency }) => {
               onClick={handleLoadMockData}
               variant="outline"
               className="flex items-center gap-2"
+              disabled={isSyncing}
             >
               <Database className="h-4 w-4" />
               Load Mock Data
@@ -253,6 +408,7 @@ const TransactionForm = ({ selectedCurrency }) => {
               onClick={handleClearData}
               variant="destructive"
               className="flex items-center gap-2"
+              disabled={isSyncing}
             >
               <Trash2 className="h-4 w-4" />
               Clear All Data
@@ -268,8 +424,9 @@ const TransactionForm = ({ selectedCurrency }) => {
         onDelete={handleDelete}
         onStatusChange={handleStatusChange}
         selectedCurrency={selectedCurrency}
+        isLoading={isLoading}
       />
-      <TransactionList transactions={transactions} onEdit={handleEdit} onDelete={handleDelete} selectedCurrency={selectedCurrency} />
+      <TransactionList transactions={transactions} onEdit={handleEdit} onDelete={handleDelete} selectedCurrency={selectedCurrency} isLoading={isLoading} />
 
       <EditTransactionDialog
         isOpen={isEditDialogOpen}

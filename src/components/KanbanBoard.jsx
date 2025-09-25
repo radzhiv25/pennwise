@@ -185,7 +185,7 @@ const KanbanColumn = ({ status, transactions, onEdit, onDelete }) => {
     );
 };
 
-const KanbanBoard = ({ transactions, onEdit, onDelete, onStatusChange, selectedCurrency }) => {
+const KanbanBoard = ({ transactions, onEdit, onDelete, onStatusChange, selectedCurrency, isLoading }) => {
     const [activeId, setActiveId] = React.useState(null);
 
     const sensors = useSensors(
@@ -258,48 +258,54 @@ const KanbanBoard = ({ transactions, onEdit, onDelete, onStatusChange, selectedC
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                >
-                    <div className="flex gap-4 overflow-x-auto pb-4">
-                        {Object.keys(statusConfig).map((status) => (
-                            <KanbanColumn
-                                key={status}
-                                status={status}
-                                transactions={groupedTransactions[status] || []}
-                                onEdit={onEdit}
-                                onDelete={onDelete}
-                            />
-                        ))}
+                {isLoading ? (
+                    <div className="text-center text-muted-foreground py-8">
+                        Loading transactions...
                     </div>
-                    <DragOverlay>
-                        {activeId ? (() => {
-                            const draggingTransaction = filteredTransactions.find(t => t.id === activeId);
-                            return draggingTransaction ? (
-                                <div className="p-2 bg-card border rounded-lg shadow-lg opacity-90 max-w-xs">
-                                    <div className="flex items-center gap-2">
-                                        <GripVertical className="h-3 w-3 text-gray-400" />
-                                        <span className="text-sm font-medium">
-                                            {draggingTransaction.type === 'income' ? 'Income' : 'Expense'}: {draggingTransaction.currency === 'USD' ? '$' : draggingTransaction.currency === 'GBP' ? '£' : '₹'}{draggingTransaction.amount.toFixed(2)}
-                                        </span>
+                ) : (
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <div className="flex gap-4 overflow-x-auto pb-4">
+                            {Object.keys(statusConfig).map((status) => (
+                                <KanbanColumn
+                                    key={status}
+                                    status={status}
+                                    transactions={groupedTransactions[status] || []}
+                                    onEdit={onEdit}
+                                    onDelete={onDelete}
+                                />
+                            ))}
+                        </div>
+                        <DragOverlay>
+                            {activeId ? (() => {
+                                const draggingTransaction = filteredTransactions.find(t => t.id === activeId);
+                                return draggingTransaction ? (
+                                    <div className="p-2 bg-card border rounded-lg shadow-lg opacity-90 max-w-xs">
+                                        <div className="flex items-center gap-2">
+                                            <GripVertical className="h-3 w-3 text-gray-400" />
+                                            <span className="text-sm font-medium">
+                                                {draggingTransaction.type === 'income' ? 'Income' : 'Expense'}: {draggingTransaction.currency === 'USD' ? '$' : draggingTransaction.currency === 'GBP' ? '£' : '₹'}{draggingTransaction.amount.toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            {draggingTransaction.category}
+                                        </div>
                                     </div>
-                                    <div className="text-xs text-gray-500 mt-1">
-                                        {draggingTransaction.category}
+                                ) : (
+                                    <div className="p-2 bg-card border rounded-lg shadow-lg opacity-90">
+                                        <div className="text-sm font-medium">
+                                            Dragging transaction...
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="p-2 bg-card border rounded-lg shadow-lg opacity-90">
-                                    <div className="text-sm font-medium">
-                                        Dragging transaction...
-                                    </div>
-                                </div>
-                            );
-                        })() : null}
-                    </DragOverlay>
-                </DndContext>
+                                );
+                            })() : null}
+                        </DragOverlay>
+                    </DndContext>
+                )}
             </CardContent>
         </Card>
     );
@@ -311,6 +317,11 @@ KanbanBoard.propTypes = {
     onDelete: PropTypes.func.isRequired,
     onStatusChange: PropTypes.func.isRequired,
     selectedCurrency: PropTypes.string.isRequired,
+    isLoading: PropTypes.bool,
+};
+
+KanbanBoard.defaultProps = {
+    isLoading: false,
 };
 
 export default KanbanBoard;
