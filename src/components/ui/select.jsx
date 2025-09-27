@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import PropTypes from "prop-types"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { Check, ChevronDown, ChevronUp } from "lucide-react"
 
@@ -107,6 +108,31 @@ const SelectSeparator = React.forwardRef(({ className, ...props }, ref) => (
     {...props} />
 ))
 SelectSeparator.displayName = SelectPrimitive.Separator.displayName
+
+// PropTypes for Select components
+const selectPropTypes = {
+  className: PropTypes.string,
+};
+
+SelectTrigger.propTypes = {
+  ...selectPropTypes,
+  children: PropTypes.node,
+};
+
+SelectContent.propTypes = {
+  ...selectPropTypes,
+  children: PropTypes.node,
+  position: PropTypes.oneOf(["item-aligned", "popper"]),
+};
+
+SelectLabel.propTypes = selectPropTypes;
+
+SelectItem.propTypes = {
+  ...selectPropTypes,
+  children: PropTypes.node,
+};
+
+SelectSeparator.propTypes = selectPropTypes;
 
 export {
   Select,
