@@ -181,4 +181,46 @@ Calendar.propTypes = {
   components: PropTypes.object,
 };
 
+// PropTypes for internal components
+const RootComponent = ({ className, rootRef, ...props }) => {
+  return (<div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />);
+};
+
+const ChevronComponent = ({ className, orientation, ...props }) => {
+  if (orientation === "left") {
+    return (<ChevronLeftIcon className={cn("size-4", className)} {...props} />);
+  }
+
+  if (orientation === "right") {
+    return (<ChevronRightIcon className={cn("size-4", className)} {...props} />);
+  }
+
+  return (<ChevronDownIcon className={cn("size-4", className)} {...props} />);
+};
+
+const WeekNumberComponent = ({ children, ...props }) => {
+  return (
+    <td {...props}>
+      <div
+        className="flex size-[--cell-size] items-center justify-center text-center">
+        {children}
+      </div>
+    </td>
+  );
+};
+
+RootComponent.propTypes = {
+  className: PropTypes.string,
+  rootRef: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
+};
+
+ChevronComponent.propTypes = {
+  className: PropTypes.string,
+  orientation: PropTypes.oneOf(["left", "right", "up", "down"]),
+};
+
+WeekNumberComponent.propTypes = {
+  children: PropTypes.node,
+};
+
 export { Calendar, CalendarDayButton }

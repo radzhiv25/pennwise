@@ -134,6 +134,10 @@ SelectItem.propTypes = {
 
 SelectSeparator.propTypes = selectPropTypes;
 
+SelectScrollUpButton.propTypes = selectPropTypes;
+
+SelectScrollDownButton.propTypes = selectPropTypes;
+
 export {
   Select,
   SelectGroup,
