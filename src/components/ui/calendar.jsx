@@ -1,4 +1,5 @@
 import * as React from "react"
+import PropTypes from "prop-types"
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -169,5 +170,15 @@ function CalendarDayButton({
       {...props} />
   );
 }
+
+Calendar.propTypes = {
+  className: PropTypes.string,
+  classNames: PropTypes.object,
+  showOutsideDays: PropTypes.bool,
+  captionLayout: PropTypes.oneOf(["label", "dropdown"]),
+  buttonVariant: PropTypes.oneOf(["default", "destructive", "outline", "secondary", "ghost", "link"]),
+  formatters: PropTypes.object,
+  components: PropTypes.object,
+};
 
 export { Calendar, CalendarDayButton }
