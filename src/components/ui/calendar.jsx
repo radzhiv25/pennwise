@@ -103,31 +103,10 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Root: ({ className, rootRef, ...props }) => {
-          return (<div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />);
-        },
-        Chevron: ({ className, orientation, ...props }) => {
-          if (orientation === "left") {
-            return (<ChevronLeftIcon className={cn("size-4", className)} {...props} />);
-          }
-
-          if (orientation === "right") {
-            return (<ChevronRightIcon className={cn("size-4", className)} {...props} />);
-          }
-
-          return (<ChevronDownIcon className={cn("size-4", className)} {...props} />);
-        },
+        Root: RootComponent,
+        Chevron: ChevronComponent,
         DayButton: CalendarDayButton,
-        WeekNumber: ({ children, ...props }) => {
-          return (
-            <td {...props}>
-              <div
-                className="flex size-[--cell-size] items-center justify-center text-center">
-                {children}
-              </div>
-            </td>
-          );
-        },
+        WeekNumber: WeekNumberComponent,
         ...components,
       }}
       {...props} />
@@ -221,6 +200,20 @@ ChevronComponent.propTypes = {
 
 WeekNumberComponent.propTypes = {
   children: PropTypes.node,
+};
+
+CalendarDayButton.propTypes = {
+  className: PropTypes.string,
+  day: PropTypes.shape({
+    date: PropTypes.instanceOf(Date).isRequired,
+  }).isRequired,
+  modifiers: PropTypes.shape({
+    focused: PropTypes.bool,
+    selected: PropTypes.bool,
+    range_start: PropTypes.bool,
+    range_end: PropTypes.bool,
+    range_middle: PropTypes.bool,
+  }).isRequired,
 };
 
 export { Calendar, CalendarDayButton }
