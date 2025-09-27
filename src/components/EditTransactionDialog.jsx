@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,7 +66,7 @@ const EditTransactionDialog = ({
                 <DialogHeader>
                     <DialogTitle>Edit Transaction</DialogTitle>
                     <DialogDescription>
-                        Make changes to your transaction here. Click save when you're done.
+                        Make changes to your transaction here. Click save when you&apos;re done.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit}>
@@ -181,6 +182,26 @@ const EditTransactionDialog = ({
             </DialogContent>
         </Dialog>
     );
+};
+
+EditTransactionDialog.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    transaction: PropTypes.shape({
+        id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+        amount: PropTypes.number.isRequired,
+        type: PropTypes.string.isRequired,
+        category: PropTypes.string.isRequired,
+        date: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]).isRequired,
+        description: PropTypes.string,
+        status: PropTypes.string,
+        currency: PropTypes.string,
+    }),
+    onSave: PropTypes.func.isRequired,
+};
+
+EditTransactionDialog.defaultProps = {
+    transaction: null,
 };
 
 export default EditTransactionDialog;
