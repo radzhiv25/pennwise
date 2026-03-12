@@ -4,10 +4,13 @@ import { flushSync } from "react-dom";
 import { Moon, Sun } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useTheme } from "@/context/ThemeContext";
 
-export const AnimatedThemeToggler = ({ className, iconClassName }) => {
-  const { isDarkMode, toggleDarkMode } = useTheme();
+export const AnimatedThemeToggler = ({
+  className,
+  iconClassName,
+  isDarkMode = false,
+  onToggleDarkMode = () => {},
+}) => {
   const buttonRef = useRef(null);
 
   useEffect(() => {
@@ -42,7 +45,7 @@ export const AnimatedThemeToggler = ({ className, iconClassName }) => {
   const handleToggle = useCallback(() => {
     const performToggle = () => {
       flushSync(() => {
-        toggleDarkMode();
+        onToggleDarkMode();
       });
     };
 
@@ -57,7 +60,7 @@ export const AnimatedThemeToggler = ({ className, iconClassName }) => {
     } else {
       performToggle();
     }
-  }, [toggleDarkMode, runClipAnimation]);
+  }, [onToggleDarkMode, runClipAnimation]);
 
   return (
     <button
@@ -78,4 +81,6 @@ export const AnimatedThemeToggler = ({ className, iconClassName }) => {
 AnimatedThemeToggler.propTypes = {
   className: PropTypes.string,
   iconClassName: PropTypes.string,
+  isDarkMode: PropTypes.bool,
+  onToggleDarkMode: PropTypes.func,
 };

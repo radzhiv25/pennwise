@@ -4,9 +4,8 @@ import { FaGithub } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
-import { useCurrency } from "@/context/CurrencyContext";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
-import { signOut } from "@/lib/supabaseClient";
+import PropTypes from "prop-types";
 
 const currencyOptions = [
   { value: "INR", label: "₹ INR" },
@@ -14,15 +13,20 @@ const currencyOptions = [
   { value: "GBP", label: "£ GBP" },
 ];
 
-const Navbar = () => {
+const Navbar = ({
+  isDarkMode,
+  onToggleDarkMode,
+  selectedCurrency,
+  onCurrencyChange,
+  onSignOut,
+}) => {
   const { user } = useAuth();
-  const { currency, setCurrency } = useCurrency();
   const location = useLocation();
 
   const isLanding = useMemo(() => location.pathname === "/", [location.pathname]);
 
-  const handleSignOut = async () => {
-    await signOut();
+  const handleSignOut = () => {
+    onSignOut?.();
   };
 
   return (
@@ -40,7 +44,7 @@ const Navbar = () => {
             {user && (
               <div className="hidden md:flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Currency:</span>
-                <Select value={currency} onValueChange={setCurrency}>
+                <Select value={selectedCurrency} onValueChange={onCurrencyChange}>
                   <SelectTrigger className="w-32 h-8">
                     <SelectValue />
                   </SelectTrigger>
@@ -57,7 +61,10 @@ const Navbar = () => {
             <a href="https://github.com/radzhiv25/expense-tracker">
               <FaGithub className="size-8 hover:text-gray-500 dark:hover:text-gray-400 transition-colors" />
             </a>
-            <AnimatedThemeToggler />
+            <AnimatedThemeToggler
+              isDarkMode={isDarkMode}
+              onToggleDarkMode={onToggleDarkMode}
+            />
             {user ? (
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 Sign Out
@@ -81,6 +88,14 @@ const Navbar = () => {
       </div>
     </header>
   );
+};
+
+Navbar.propTypes = {
+  isDarkMode: PropTypes.bool,
+  onToggleDarkMode: PropTypes.func,
+  selectedCurrency: PropTypes.string,
+  onCurrencyChange: PropTypes.func,
+  onSignOut: PropTypes.func,
 };
 
 export default Navbar;
