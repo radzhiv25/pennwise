@@ -1,108 +1,87 @@
-import { useEffect, useState, useCallback } from "react";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-import TransactionForm from "./components/TransactionForm";
-import AuthGate from "./components/AuthGate";
-import { useAuth } from "@/context/AuthContext";
-import { supabase, signOut as supabaseSignOut } from "@/lib/supabaseClient";
+import { useCallback, useEffect, useState } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import AuthGate from "@/components/AuthGate";
+import Landing from "@/pages/Landing";
+import Login from "@/pages/Login";
+import Signup from "@/pages/Signup";
+import Dashboard from "@/pages/Dashboard";
 
-function App() {
-    const { user } = useAuth();
+function PublicShell({ children }) {
     const [isDarkMode, setIsDarkMode] = useState(false);
-    const [selectedCurrency, setSelectedCurrency] = useState("INR");
 
     const applyTheme = useCallback((shouldUseDark) => {
         setIsDarkMode(shouldUseDark);
         document.documentElement.classList.toggle("dark", shouldUseDark);
     }, []);
 
-    const loadPreferences = useCallback(async () => {
-        if (!user) return;
-
-        const { data, error } = await supabase
-            .from("user_preferences")
-            .select("theme, currency")
-            .eq("user_id", user.id)
-            .single();
-
-        if (error) {
-            console.warn("No preferences found, falling back to defaults", error.message);
-            const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-            applyTheme(prefersDark);
-            setSelectedCurrency("INR");
-            return;
-        }
-
-        applyTheme(data?.theme === "dark");
-        if (data?.currency) {
-            setSelectedCurrency(data.currency);
-        }
-    }, [user, applyTheme]);
-
-    const savePreferences = useCallback(
-        async (preferences) => {
-            if (!user) return;
-
-            const { error } = await supabase.from("user_preferences").upsert(
-                {
-                    user_id: user.id,
-                    ...preferences,
-                    updated_at: new Date().toISOString(),
-                },
-                { onConflict: "user_id" }
-            );
-
-            if (error) {
-                console.error("Failed to save preferences", error);
-            }
-        },
-        [user]
-    );
-
-    useEffect(() => {
-        if (user) {
-            loadPreferences();
-        }
-    }, [user, loadPreferences]);
-
     useEffect(() => {
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         applyTheme(prefersDark);
     }, [applyTheme]);
 
-    const toggleDarkMode = async () => {
-        const newDarkMode = !isDarkMode;
-        applyTheme(newDarkMode);
-        await savePreferences({ theme: newDarkMode ? "dark" : "light", currency: selectedCurrency });
-    };
-
-    const handleCurrencyChange = async (currency) => {
-        setSelectedCurrency(currency);
-        await savePreferences({ theme: isDarkMode ? "dark" : "light", currency });
-    };
-
-    const handleSignOut = async () => {
-        await supabaseSignOut();
+    const toggleDarkMode = () => {
+        applyTheme(!isDarkMode);
     };
 
     return (
-        <AuthGate>
-            <div className="min-h-screen bg-background dark:bg-black">
-                <div className="container mx-auto px-4 py-8 max-w-6xl">
-                    <Navbar
-                        isDarkMode={isDarkMode}
-                        onToggleDarkMode={toggleDarkMode}
-                        selectedCurrency={selectedCurrency}
-                        onCurrencyChange={handleCurrencyChange}
-                        onSignOut={handleSignOut}
-                    />
-                    <main className="mt-8">
-                        <TransactionForm selectedCurrency={selectedCurrency} />
-                    </main>
-                    <Footer />
-                </div>
+        <div className="min-h-screen bg-background dark:bg-black flex flex-col">
+            <div className="container mx-auto px-4 py-8 md:w-1/2 flex-1 flex flex-col">
+                <Navbar
+                    isDarkMode={isDarkMode}
+                    onToggleDarkMode={toggleDarkMode}
+                    selectedCurrency="INR"
+                    onCurrencyChange={() => {}}
+                />
+                <main className="mt-8 flex-1">{children}</main>
+                <Footer />
             </div>
-        </AuthGate>
+        </div>
+    );
+}
+
+function App() {
+    return (
+        <Routes>
+            <Route
+                path="/"
+                element={
+                    <PublicShell>
+                        <Landing />
+                    </PublicShell>
+                }
+            />
+            <Route
+                path="/login"
+                element={
+                    <PublicShell>
+                        <div className="flex justify-center">
+                            <Login />
+                        </div>
+                    </PublicShell>
+                }
+            />
+            <Route
+                path="/signup"
+                element={
+                    <PublicShell>
+                        <div className="flex justify-center">
+                            <Signup />
+                        </div>
+                    </PublicShell>
+                }
+            />
+            <Route
+                path="/app"
+                element={
+                    <AuthGate>
+                        <Dashboard />
+                    </AuthGate>
+                }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
     );
 }
 

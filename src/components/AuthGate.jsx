@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import AuthForm from "@/components/AuthForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const AuthGate = ({ children }) => {
@@ -22,11 +22,7 @@ const AuthGate = ({ children }) => {
     }
 
     if (!user) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <AuthForm />
-            </div>
-        );
+        return <Navigate to="/login" replace />;
     }
 
     return children;

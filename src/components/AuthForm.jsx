@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { signInWithEmail, signUpWithEmail } from "@/lib/supabaseClient";
 
-const AuthForm = ({ onAuthSuccess }) => {
-    const [mode, setMode] = useState("sign-in");
+const AuthForm = ({ initialMode = "sign-in", onAuthSuccess, onSignInSuccess, onSignUpSuccess }) => {
+    const [mode, setMode] = useState(initialMode);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,12 +35,18 @@ const AuthForm = ({ onAuthSuccess }) => {
             if (mode === "sign-in") {
                 const { error } = await signInWithEmail({ email, password });
                 if (error) throw error;
-                onAuthSuccess?.();
+                (onSignInSuccess ?? onAuthSuccess)?.();
             } else {
                 const { error } = await signUpWithEmail({ email, password });
                 if (error) throw error;
-                setSuccessMessage("Check your inbox for a confirmation email. Once confirmed, sign in to continue.");
-                setMode("sign-in");
+                if (onSignUpSuccess) {
+                    onSignUpSuccess();
+                } else {
+                    setSuccessMessage(
+                        "Check your inbox for a confirmation email. Once confirmed, sign in to continue."
+                    );
+                    setMode("sign-in");
+                }
             }
         } catch (authError) {
             console.error("Auth error", authError);
@@ -125,7 +131,10 @@ const AuthForm = ({ onAuthSuccess }) => {
 };
 
 AuthForm.propTypes = {
+    initialMode: PropTypes.oneOf(["sign-in", "sign-up"]),
     onAuthSuccess: PropTypes.func,
+    onSignInSuccess: PropTypes.func,
+    onSignUpSuccess: PropTypes.func,
 };
 
 export default AuthForm;
