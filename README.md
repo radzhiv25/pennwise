@@ -56,18 +56,18 @@ To get a local copy up and running, follow these simple steps:
 1. **Start the development server:**
 
     ```sh
-    npm start
+    npm run dev
     # or if you prefer yarn
-    yarn start
+    yarn dev
     ```
 
-2. **Open your browser and navigate to `http://localhost:5173`**
+2. **Open your browser and navigate to `http://localhost:3000`**
 
 3. **Use the application to manage your transactions.**
 
 ## Technologies Used
 
-- **ReactJS**: A JavaScript library for building user interfaces, especially single-page applications, using a component-based architecture.
+- **Next.js**: React framework with App Router for routing, layouts, and deployment.
 - **Tailwind CSS**: A utility-first CSS framework for rapid UI development.
 - **Chart.js**: A popular JavaScript library for creating charts to visualize your data.
 - **React Icons**: A library of popular icons for React applications.
@@ -78,8 +78,8 @@ To get a local copy up and running, follow these simple steps:
 Create a `.env` file at the project root with the following variables (these are required for Supabase connectivity):
 
 ```
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 Refer to the [Supabase documentation](https://supabase.com/docs/guides/getting-started/quickstarts) to obtain these values.
@@ -88,21 +88,17 @@ Refer to the [Supabase documentation](https://supabase.com/docs/guides/getting-s
 
 ```plaintext
 ├── src
+│   ├── app
+│   │   ├── (marketing)/     # landing, login, signup
+│   │   ├── app/             # protected dashboard
+│   │   ├── globals.css
+│   │   └── layout.jsx
 │   ├── components
-│   │   ├── Footer.jsx
-│   │   ├── Navbar.jsx
-│   │   ├── Summary.jsx
-│   │   ├── TransactionForm.jsx
-│   │   ├── TransactionList.jsx
-│   │   ├── Summary.jsx
-│   │   └── ...
-│   ├── App.jsx
-│   ├── index.css
-│   ├── main.jsx
-│   └── ...
+│   ├── context
+│   └── lib
+├── supabase/schema.sql
 ├── tailwind.config.js
-├── package.json
-└── ...
+└── package.json
 ```
 
 ## Contributing
