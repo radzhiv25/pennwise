@@ -1,9 +1,11 @@
 const Footer = () => {
   return (
-    <div className='mt-auto w-max mx-auto p-5'>
-        <div className="text-gray-500 text-sm">Created with ❤️ in React and Tailwind</div>
-    </div>
-  )
-}
+    <footer className="mt-auto py-6">
+      <p className="text-[10px] text-muted-foreground">
+        PennWise · Next.js & Tailwind
+      </p>
+    </footer>
+  );
+};
 
-export default Footer
+export default Footer;
