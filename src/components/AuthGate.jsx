@@ -1,10 +1,20 @@
+"use client";
+
 import PropTypes from "prop-types";
-import { Navigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const AuthGate = ({ children }) => {
     const { user, loading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!loading && !user) {
+            router.replace("/login");
+        }
+    }, [loading, user, router]);
 
     if (loading) {
         return (
@@ -22,7 +32,7 @@ const AuthGate = ({ children }) => {
     }
 
     if (!user) {
-        return <Navigate to="/login" replace />;
+        return null;
     }
 
     return children;

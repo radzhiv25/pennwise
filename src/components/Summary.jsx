@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from 'react';
 import PropTypes from "prop-types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

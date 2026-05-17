@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { flushSync } from "react-dom";

@@ -1,6 +1,8 @@
+"use client";
+
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import PropTypes from "prop-types";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabase } from "@/lib/supabaseClient";
 
 const AuthContext = createContext({ session: null, user: null, loading: true });
 
@@ -12,6 +14,12 @@ export const AuthProvider = ({ children }) => {
         let isMounted = true;
 
         const initializeAuth = async () => {
+            const supabase = getSupabase();
+            if (!supabase) {
+                if (isMounted) setLoading(false);
+                return;
+            }
+
             const { data, error } = await supabase.auth.getSession();
 
             if (error) {
@@ -25,6 +33,11 @@ export const AuthProvider = ({ children }) => {
         };
 
         initializeAuth();
+
+        const supabase = getSupabase();
+        if (!supabase) {
+            return undefined;
+        }
 
         const {
             data: { subscription },
