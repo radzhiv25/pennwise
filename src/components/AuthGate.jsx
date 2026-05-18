@@ -4,42 +4,36 @@ import PropTypes from "prop-types";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const AuthGate = ({ children }) => {
-    const { user, loading } = useAuth();
-    const router = useRouter();
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-    useEffect(() => {
-        if (!loading && !user) {
-            router.replace("/login");
-        }
-    }, [loading, user, router]);
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Card className="max-w-md w-full mx-4">
-                    <CardHeader>
-                        <CardTitle>Loading...</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">Checking your session, please wait.</p>
-                    </CardContent>
-                </Card>
-            </div>
-        );
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/login");
     }
+  }, [loading, user, router]);
 
-    if (!user) {
-        return null;
-    }
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground animate-pulse">
+          Opening dashboard…
+        </p>
+      </div>
+    );
+  }
 
-    return children;
+  if (!user) {
+    return null;
+  }
+
+  return children;
 };
 
 AuthGate.propTypes = {
-    children: PropTypes.node,
+  children: PropTypes.node,
 };
 
 export default AuthGate;

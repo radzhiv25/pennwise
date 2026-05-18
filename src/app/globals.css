@@ -90,3 +90,116 @@
     @apply font-mono;
     }
 }
+
+@layer utilities {
+  .shell-constrained {
+    @apply mx-auto flex min-h-screen w-full max-w-[50vw] flex-col px-6 py-8 sm:px-10 sm:py-12 max-lg:max-w-xl;
+  }
+
+  .dashboard-stack {
+    @apply flex flex-col gap-6;
+  }
+
+  .form-field {
+    @apply flex flex-col gap-2;
+  }
+
+  .field-control {
+    @apply h-8 w-full min-w-0 rounded-none border border-input bg-transparent px-2.5 text-xs text-foreground shadow-none transition-colors outline-none focus-visible:border-ring;
+  }
+
+  .text-income {
+    @apply text-emerald-600 dark:text-emerald-400;
+  }
+
+  .text-expense {
+    @apply text-red-600 dark:text-red-400;
+  }
+
+  .auth-brand-panel {
+    background-image:
+      radial-gradient(
+        circle at 20% 80%,
+        oklch(0.55 0.2 277 / 0.4) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        circle at 80% 20%,
+        oklch(0.4 0.18 277 / 0.3) 0%,
+        transparent 45%
+      );
+  }
+
+  .auth-scanline {
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      oklch(1 0 0 / 0.03) 2px,
+      oklch(1 0 0 / 0.03) 4px
+    );
+    animation: auth-scan 8s linear infinite;
+  }
+
+  .auth-ascii-reveal {
+    animation: auth-fade-up 0.8s ease-out 0.2s both;
+  }
+
+  .auth-stat-pulse {
+    animation: auth-pulse 2.4s ease-in-out infinite;
+  }
+
+  .auth-ticker-line {
+    animation: auth-ticker-fade 2.4s ease-in-out infinite;
+    min-height: 1.25rem;
+  }
+
+  @keyframes auth-scan {
+    0% {
+      transform: translateY(-100%);
+    }
+    100% {
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes auth-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes auth-pulse {
+    0%,
+    100% {
+      opacity: 0.45;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes auth-ticker-fade {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-scanline,
+  .auth-ascii-reveal,
+  .auth-stat-pulse,
+  .auth-ticker-line {
+    animation: none;
+  }
+}

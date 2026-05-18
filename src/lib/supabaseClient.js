@@ -2,23 +2,21 @@ import { createClient } from "@supabase/supabase-js";
 
 let client = null;
 
-function getEnv(name, legacyName) {
-  return process.env[name] || process.env[legacyName];
+// Next.js only inlines NEXT_PUBLIC_* when accessed with literal property names.
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+const supabaseAnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+  process.env.VITE_SUPABASE_ANON_KEY;
+
+export function isSupabaseConfigured() {
+  return Boolean(supabaseUrl?.trim() && supabaseAnonKey?.trim());
 }
 
 export function getSupabase() {
   if (client) return client;
 
-  const supabaseUrl = getEnv(
-    "NEXT_PUBLIC_SUPABASE_URL",
-    "VITE_SUPABASE_URL"
-  );
-  const supabaseAnonKey = getEnv(
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-    "VITE_SUPABASE_ANON_KEY"
-  );
-
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!isSupabaseConfigured()) {
     return null;
   }
 
@@ -26,12 +24,9 @@ export function getSupabase() {
   return client;
 }
 
-if (
-  typeof window === "undefined" &&
-  !getEnv("NEXT_PUBLIC_SUPABASE_URL", "VITE_SUPABASE_URL")
-) {
+if (typeof window === "undefined" && !isSupabaseConfigured()) {
   console.warn(
-    "Supabase URL or anon key is missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment."
+    "Supabase URL or anon key is missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local or .env, then restart the dev server."
   );
 }
 
@@ -42,7 +37,7 @@ export const supabase = new Proxy(
       const instance = getSupabase();
       if (!instance) {
         throw new Error(
-          "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+          "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local or .env, then restart the dev server."
         );
       }
       const value = instance[prop];

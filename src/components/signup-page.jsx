@@ -20,13 +20,9 @@ export function SignupPage() {
   }
 
   return (
-    <div className="flex justify-center">
-      <AuthForm
-        initialMode="sign-up"
-        onSignUpSuccess={() =>
-          router.replace("/login?fromSignup=1")
-        }
-      />
-    </div>
+    <AuthForm
+      mode="sign-up"
+      onSignUpSuccess={() => router.replace("/login?fromSignup=1")}
+    />
   );
 }
