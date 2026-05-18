@@ -14,7 +14,8 @@ dist
 dist-ssr
 *.local
 .env
-.env.*
+.env.local
+.env.*.local
 supabase/.branches
 supabase/.temp
 
