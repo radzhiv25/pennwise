@@ -1,105 +1,117 @@
 "use client";
 
-import { useState } from 'react';
+import { useMemo, useState } from "react";
 import PropTypes from "prop-types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
-import { BarChart3, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  PolarAngleAxis,
+  PolarGrid,
+  Radar,
+  RadarChart,
+  RadialBar,
+  RadialBarChart,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FormField } from "@/components/ui/form-field";
+import {
+  CHART_TYPES,
+  buildCategoryChartConfig,
+  buildExpenseCategoryData,
+  buildMonthlyData,
+  buildPieCategoryData,
+  buildTimeSeriesData,
+  filterByCurrency,
+  flowChartConfig,
+  getCurrencySymbol,
+} from "@/lib/chart-data";
+
+const CHART_HEIGHT = "min-h-[280px] w-full";
+
+function formatAxisDate(value) {
+  return new Date(value).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
 
 const Chart = ({ transactions, selectedCurrency }) => {
-  const [chartType, setChartType] = useState('line');
+  const [chartType, setChartType] = useState("line");
+  const symbol = getCurrencySymbol(selectedCurrency);
 
-  // Filter transactions by selected currency
-  const filteredTransactions = transactions.filter(transaction =>
-    (transaction.currency || 'INR') === selectedCurrency
+  const filtered = useMemo(
+    () => filterByCurrency(transactions, selectedCurrency),
+    [transactions, selectedCurrency]
   );
 
-  // Group transactions by date and calculate daily totals
-  const groupedData = filteredTransactions.reduce((acc, transaction) => {
-    const date = transaction.date;
-    if (!acc[date]) {
-      acc[date] = { date, income: 0, expense: 0 };
-    }
-    if (transaction.type === 'income') {
-      acc[date].income += transaction.amount;
-    } else {
-      acc[date].expense += transaction.amount;
-    }
-    return acc;
-  }, {});
+  const timeSeries = useMemo(() => buildTimeSeriesData(filtered), [filtered]);
+  const monthly = useMemo(() => buildMonthlyData(filtered), [filtered]);
+  const expenseCategories = useMemo(
+    () => buildExpenseCategoryData(filtered),
+    [filtered]
+  );
+  const pieData = useMemo(() => buildPieCategoryData(filtered), [filtered]);
 
-  // Convert to array and sort by date
-  const lineChartData = Object.values(groupedData).sort((a, b) => new Date(a.date) - new Date(b.date));
+  const categoryConfig = useMemo(
+    () => buildCategoryChartConfig(expenseCategories),
+    [expenseCategories]
+  );
 
-  // Process data for pie chart (category breakdown)
-  const pieChartData = filteredTransactions.reduce((acc, transaction) => {
-    const category = transaction.category;
-    if (!acc[category]) {
-      acc[category] = { name: category, value: 0, type: transaction.type };
-    }
-    acc[category].value += transaction.amount;
-    return acc;
-  }, {});
+  const activeMeta = CHART_TYPES.find((t) => t.id === chartType) ?? CHART_TYPES[0];
 
-  const pieData = Object.values(pieChartData).sort((a, b) => b.value - a.value);
+  const formatMoney = (value) => `${symbol}${Number(value).toLocaleString()}`;
 
-  // Process data for bar chart (monthly comparison)
-  const monthlyData = filteredTransactions.reduce((acc, transaction) => {
-    const date = new Date(transaction.date);
-    const month = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    if (!acc[month]) {
-      acc[month] = { month, income: 0, expense: 0 };
-    }
-    if (transaction.type === 'income') {
-      acc[month].income += transaction.amount;
-    } else {
-      acc[month].expense += transaction.amount;
-    }
-    return acc;
-  }, {});
+  const tooltipFormatter = (value, name) => (
+    <div className="flex w-full items-center justify-between gap-4">
+      <span className="text-muted-foreground">{name}</span>
+      <span className="font-mono font-medium tabular-nums">
+        {formatMoney(value)}
+      </span>
+    </div>
+  );
 
-  const barChartData = Object.values(monthlyData).sort((a, b) => new Date(a.month) - new Date(b.month));
-
-  // Colors for pie chart
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C', '#8DD1E1', '#D084D0', '#87D068', '#FFB347', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
-
-  const getChartTitle = () => {
-    switch (chartType) {
-      case 'line':
-        return 'Income vs Expenses Over Time';
-      case 'pie':
-        return 'Expense Categories Breakdown';
-      case 'bar':
-        return 'Monthly Income vs Expenses';
-      default:
-        return 'Financial Overview';
-    }
-  };
-
-  const getChartDescription = () => {
-    switch (chartType) {
-      case 'line':
-        return 'Track your financial trends over time';
-      case 'pie':
-        return 'See how your expenses are distributed across categories';
-      case 'bar':
-        return 'Compare monthly income and expenses';
-      default:
-        return 'Visualize your financial data';
-    }
-  };
-
-  if (transactions.length === 0) {
+  if (filtered.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Financial Charts</CardTitle>
-          <CardDescription>Visualize your financial data with different chart types</CardDescription>
+          <CardTitle>Financial charts</CardTitle>
+          <CardDescription>
+            Visualize your data with shadcn chart components
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center h-64 text-muted-foreground">
-            No data available. Add some transactions to see the charts.
+          <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+            No data for this currency. Add transactions to see charts.
           </div>
         </CardContent>
       </Card>
@@ -108,90 +120,221 @@ const Chart = ({ transactions, selectedCurrency }) => {
 
   const renderChart = () => {
     switch (chartType) {
-      case 'line':
+      case "line":
         return (
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={lineChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
+          <ChartContainer config={flowChartConfig} className={CHART_HEIGHT}>
+            <LineChart data={timeSeries} margin={{ left: 8, right: 8 }}>
+              <CartesianGrid vertical={false} />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 12 }}
-                tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={formatAxisDate}
               />
               <YAxis
-                tick={{ fontSize: 12 }}
-                tickFormatter={(value) => `₹${value}`}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(v) => `${symbol}${v}`}
               />
-              <Tooltip
-                formatter={(value, name) => [`₹${value}`, name === 'income' ? 'Income' : 'Expense']}
-                labelFormatter={(value) => `Date: ${new Date(value).toLocaleDateString()}`}
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(v) => formatAxisDate(v)}
+                    formatter={tooltipFormatter}
+                  />
+                }
               />
-              <Legend />
+              <ChartLegend content={<ChartLegendContent />} />
               <Line
                 type="monotone"
                 dataKey="income"
-                stroke="#10b981"
+                stroke="var(--color-income)"
                 strokeWidth={2}
-                dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-                name="Income"
+                dot={false}
               />
               <Line
                 type="monotone"
                 dataKey="expense"
-                stroke="#ef4444"
+                stroke="var(--color-expense)"
                 strokeWidth={2}
-                dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
-                name="Expense"
+                dot={false}
               />
             </LineChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         );
 
-      case 'pie':
+      case "area":
         return (
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value) => [`₹${value}`, 'Amount']} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        );
-
-      case 'bar':
-        return (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={barChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
+          <ChartContainer config={flowChartConfig} className={CHART_HEIGHT}>
+            <AreaChart data={timeSeries} margin={{ left: 8, right: 8 }}>
+              <CartesianGrid vertical={false} />
               <XAxis
-                dataKey="month"
-                tick={{ fontSize: 12 }}
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={formatAxisDate}
               />
               <YAxis
-                tick={{ fontSize: 12 }}
-                tickFormatter={(value) => `₹${value}`}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(v) => `${symbol}${v}`}
               />
-              <Tooltip
-                formatter={(value, name) => [`₹${value}`, name === 'income' ? 'Income' : 'Expense']}
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(v) => formatAxisDate(v)}
+                    formatter={tooltipFormatter}
+                  />
+                }
               />
-              <Legend />
-              <Bar dataKey="income" fill="#10b981" name="Income" />
-              <Bar dataKey="expense" fill="#ef4444" name="Expense" />
+              <ChartLegend content={<ChartLegendContent />} />
+              <Area
+                type="monotone"
+                dataKey="income"
+                fill="var(--color-income)"
+                stroke="var(--color-income)"
+                fillOpacity={0.35}
+                stackId="a"
+              />
+              <Area
+                type="monotone"
+                dataKey="expense"
+                fill="var(--color-expense)"
+                stroke="var(--color-expense)"
+                fillOpacity={0.35}
+                stackId="b"
+              />
+            </AreaChart>
+          </ChartContainer>
+        );
+
+      case "bar":
+        return (
+          <ChartContainer config={flowChartConfig} className={CHART_HEIGHT}>
+            <BarChart data={monthly} margin={{ left: 8, right: 8 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="month"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(v) => `${symbol}${v}`}
+              />
+              <ChartTooltip
+                content={<ChartTooltipContent formatter={tooltipFormatter} />}
+              />
+              <ChartLegend content={<ChartLegendContent />} />
+              <Bar
+                dataKey="income"
+                fill="var(--color-income)"
+                radius={[0, 0, 0, 0]}
+              />
+              <Bar
+                dataKey="expense"
+                fill="var(--color-expense)"
+                radius={[0, 0, 0, 0]}
+              />
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
+        );
+
+      case "pie":
+        if (pieData.length === 0) {
+          return (
+            <p className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+              No expense transactions to chart.
+            </p>
+          );
+        }
+        return (
+          <ChartContainer config={categoryConfig} className={CHART_HEIGHT}>
+            <PieChart>
+              <ChartTooltip
+                content={<ChartTooltipContent formatter={tooltipFormatter} />}
+              />
+              <Pie
+                data={pieData}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={50}
+                strokeWidth={2}
+              >
+                {pieData.map((entry) => (
+                  <Cell key={entry.name} fill={entry.fill} />
+                ))}
+              </Pie>
+              <ChartLegend content={<ChartLegendContent nameKey="name" />} />
+            </PieChart>
+          </ChartContainer>
+        );
+
+      case "radial":
+        if (expenseCategories.length === 0) {
+          return (
+            <p className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+              No expense transactions to chart.
+            </p>
+          );
+        }
+        return (
+          <ChartContainer config={categoryConfig} className={CHART_HEIGHT}>
+            <RadialBarChart
+              data={expenseCategories}
+              innerRadius={36}
+              outerRadius={110}
+              dataKey="amount"
+              nameKey="category"
+            >
+              <ChartTooltip
+                content={<ChartTooltipContent formatter={tooltipFormatter} />}
+              />
+              <RadialBar
+                background
+                dataKey="amount"
+                cornerRadius={0}
+                label={{ position: "insideStart", fill: "var(--background)" }}
+              />
+              <ChartLegend
+                verticalAlign="bottom"
+                content={<ChartLegendContent nameKey="category" />}
+              />
+            </RadialBarChart>
+          </ChartContainer>
+        );
+
+      case "radar":
+        if (expenseCategories.length === 0) {
+          return (
+            <p className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+              No expense transactions to chart.
+            </p>
+          );
+        }
+        return (
+          <ChartContainer config={categoryConfig} className={CHART_HEIGHT}>
+            <RadarChart data={expenseCategories} outerRadius={96}>
+              <ChartTooltip
+                content={<ChartTooltipContent formatter={tooltipFormatter} />}
+              />
+              <PolarAngleAxis dataKey="category" tick={{ fontSize: 10 }} />
+              <PolarGrid />
+              <Radar
+                dataKey="amount"
+                fill="var(--chart-1)"
+                fillOpacity={0.45}
+                stroke="var(--chart-1)"
+              />
+            </RadarChart>
+          </ChartContainer>
         );
 
       default:
@@ -201,46 +344,29 @@ const Chart = ({ transactions, selectedCurrency }) => {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>{getChartTitle()}</CardTitle>
-            <CardDescription>{getChartDescription()}</CardDescription>
+      <CardHeader className="gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1">
+            <CardTitle>{activeMeta.title}</CardTitle>
+            <CardDescription>{activeMeta.description}</CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant={chartType === 'line' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setChartType('line')}
-              className="flex items-center gap-2"
-            >
-              <TrendingUp className="h-4 w-4" />
-              Line
-            </Button>
-            <Button
-              variant={chartType === 'pie' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setChartType('pie')}
-              className="flex items-center gap-2"
-            >
-              <PieChartIcon className="h-4 w-4" />
-              Pie
-            </Button>
-            <Button
-              variant={chartType === 'bar' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setChartType('bar')}
-              className="flex items-center gap-2"
-            >
-              <BarChart3 className="h-4 w-4" />
-              Bar
-            </Button>
-          </div>
+          <FormField label="Chart type" className="w-full sm:w-44">
+            <Select value={chartType} onValueChange={setChartType}>
+              <SelectTrigger id="chart-type">
+                <SelectValue placeholder="Select chart" />
+              </SelectTrigger>
+              <SelectContent>
+                {CHART_TYPES.map((type) => (
+                  <SelectItem key={type.id} value={type.id}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
         </div>
       </CardHeader>
-      <CardContent>
-        {renderChart()}
-      </CardContent>
+      <CardContent>{renderChart()}</CardContent>
     </Card>
   );
 };
