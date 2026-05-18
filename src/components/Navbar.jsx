@@ -1,10 +1,18 @@
+"use client";
+
 import { useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { FaGithub } from "react-icons/fa";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/context/AuthContext";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import PropTypes from "prop-types";
 
 const currencyOptions = [
@@ -14,88 +22,74 @@ const currencyOptions = [
 ];
 
 const Navbar = ({
+  variant = "minimal",
   isDarkMode,
   onToggleDarkMode,
   selectedCurrency,
   onCurrencyChange,
   onSignOut,
+  showCurrency = false,
 }) => {
   const { user } = useAuth();
-  const location = useLocation();
-
-  const isLanding = useMemo(() => location.pathname === "/", [location.pathname]);
-
-  const handleSignOut = () => {
-    onSignOut?.();
-  };
+  const pathname = usePathname();
+  const isLanding = useMemo(() => pathname === "/", [pathname]);
 
   return (
-    <header className="sticky top-5 z-50">
-      <div className="container mx-auto px-4">
-        <div className="bg-white-50 backdrop-blur-sm p-3 border border-gray-200 dark:border-gray-700 rounded-md flex flex-wrap gap-3 justify-between items-center">
-          <Link to={user ? "/app" : "/"} className="leading-none">
-            <h1 className="text-2xl font-semibold leading-none bg-gradient-to-br from-gray-300 via-black dark:from-gray-100 dark:via-white text-transparent bg-clip-text">
-              PennWise
-            </h1>
-            <p className="text-xs text-muted-foreground">manage expense in clicks</p>
-          </Link>
+    <header className="flex items-center justify-between gap-4">
+      <Link
+        href={user ? "/app" : "/"}
+        className="text-sm font-semibold tracking-tight text-foreground"
+      >
+        PennWise
+      </Link>
 
-          <div className="flex items-center gap-3">
-            {user && (
-              <div className="hidden md:flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Currency:</span>
-                <Select value={selectedCurrency} onValueChange={onCurrencyChange}>
-                  <SelectTrigger className="w-32 h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {currencyOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <a href="https://github.com/radzhiv25/expense-tracker">
-              <FaGithub className="size-8 hover:text-gray-500 dark:hover:text-gray-400 transition-colors" />
-            </a>
-            <AnimatedThemeToggler
-              isDarkMode={isDarkMode}
-              onToggleDarkMode={onToggleDarkMode}
-            />
-            {user ? (
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                Sign Out
-              </Button>
-            ) : isLanding ? (
-              <div className="flex items-center gap-2">
-                <Button asChild variant="ghost" size="sm">
-                  <Link to="/login">Log in</Link>
-                </Button>
-                <Button asChild size="sm">
-                  <Link to="/signup">Get Started</Link>
-                </Button>
-              </div>
-            ) : (
-              <Button asChild size="sm">
-                <Link to="/">Back to Home</Link>
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+      <nav className="flex items-center gap-1">
+        {user && showCurrency && onCurrencyChange && (
+          <Select value={selectedCurrency} onValueChange={onCurrencyChange}>
+            <SelectTrigger className="h-8 w-[5.5rem] border-0 bg-transparent px-2 text-xs shadow-none">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {currencyOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        <ThemeToggle isDarkMode={isDarkMode} onToggle={onToggleDarkMode} />
+        {user ? (
+          <Button variant="ghost" size="sm" onClick={onSignOut}>
+            Sign out
+          </Button>
+        ) : isLanding ? (
+          <>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/login">Log in</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link href="/signup">Sign up</Link>
+            </Button>
+          </>
+        ) : (
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/">Home</Link>
+          </Button>
+        )}
+      </nav>
     </header>
   );
 };
 
 Navbar.propTypes = {
+  variant: PropTypes.oneOf(["minimal", "default"]),
   isDarkMode: PropTypes.bool,
   onToggleDarkMode: PropTypes.func,
   selectedCurrency: PropTypes.string,
   onCurrencyChange: PropTypes.func,
   onSignOut: PropTypes.func,
+  showCurrency: PropTypes.bool,
 };
 
 export default Navbar;

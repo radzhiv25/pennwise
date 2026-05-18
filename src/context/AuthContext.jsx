@@ -1,57 +1,90 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import PropTypes from "prop-types";
-import { supabase } from "@/lib/supabaseClient";
+"use client";
 
-const AuthContext = createContext({ session: null, user: null, loading: true });
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import PropTypes from "prop-types";
+import { getSupabase } from "@/lib/supabaseClient";
+
+const AuthContext = createContext({
+  session: null,
+  user: null,
+  loading: true,
+  syncSession: async () => {},
+});
 
 export const AuthProvider = ({ children }) => {
-    const [session, setSession] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        let isMounted = true;
+  const syncSession = useCallback(async () => {
+    const supabase = getSupabase();
+    if (!supabase) {
+      setSession(null);
+      setLoading(false);
+      return null;
+    }
 
-        const initializeAuth = async () => {
-            const { data, error } = await supabase.auth.getSession();
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("Error syncing session", error);
+    }
 
-            if (error) {
-                console.error("Error fetching initial session", error);
-            }
+    const nextSession = data?.session ?? null;
+    setSession(nextSession);
+    setLoading(false);
+    return nextSession;
+  }, []);
 
-            if (isMounted) {
-                setSession(data?.session ?? null);
-                setLoading(false);
-            }
-        };
+  useEffect(() => {
+    let isMounted = true;
 
-        initializeAuth();
+    const initializeAuth = async () => {
+      await syncSession();
+      if (!isMounted) return;
+    };
 
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, newSession) => {
-            setSession(newSession);
-        });
+    initializeAuth();
 
-        return () => {
-            isMounted = false;
-            subscription.unsubscribe();
-        };
-    }, []);
+    const supabase = getSupabase();
+    if (!supabase) {
+      return undefined;
+    }
 
-    const value = useMemo(
-        () => ({
-            session,
-            user: session?.user ?? null,
-            loading,
-        }),
-        [session, loading]
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!isMounted) return;
+      setSession(newSession);
+      setLoading(false);
+    });
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [syncSession]);
+
+  const value = useMemo(
+    () => ({
+      session,
+      user: session?.user ?? null,
+      loading,
+      syncSession,
+    }),
+    [session, loading, syncSession]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 AuthProvider.propTypes = {
-    children: PropTypes.node.isRequired,
+  children: PropTypes.node.isRequired,
 };
 
 export const useAuth = () => useContext(AuthContext);

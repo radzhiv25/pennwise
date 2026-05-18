@@ -1,140 +1,183 @@
+"use client";
+
 import { useState } from "react";
+import Link from "next/link";
 import PropTypes from "prop-types";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { EyeIcon, EyeSlashIcon } from "@phosphor-icons/react";
 import { Input } from "@/components/ui/input";
+import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 import { signInWithEmail, signUpWithEmail } from "@/lib/supabaseClient";
 
-const AuthForm = ({ initialMode = "sign-in", onAuthSuccess, onSignInSuccess, onSignUpSuccess }) => {
-    const [mode, setMode] = useState(initialMode);
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [successMessage, setSuccessMessage] = useState(null);
+const AuthForm = ({
+  mode = "sign-in",
+  onAuthSuccess,
+  onSignInSuccess,
+  onSignUpSuccess,
+}) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
 
-    const resetMessages = () => {
-        setError(null);
-        setSuccessMessage(null);
-    };
+  const { syncSession } = useAuth();
+  const isSignIn = mode === "sign-in";
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        resetMessages();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
 
-        if (mode === "sign-up" && password !== confirmPassword) {
-            setError("Passwords do not match");
-            return;
-        }
+    if (!isSignIn && password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
 
-        setLoading(true);
+    setLoading(true);
 
-        try {
-            if (mode === "sign-in") {
-                const { error } = await signInWithEmail({ email, password });
-                if (error) throw error;
-                (onSignInSuccess ?? onAuthSuccess)?.();
-            } else {
-                const { error } = await signUpWithEmail({ email, password });
-                if (error) throw error;
-                if (onSignUpSuccess) {
-                    onSignUpSuccess();
-                } else {
-                    setSuccessMessage(
-                        "Check your inbox for a confirmation email. Once confirmed, sign in to continue."
-                    );
-                    setMode("sign-in");
-                }
-            }
-        } catch (authError) {
-            console.error("Auth error", authError);
-            setError(authError.message || "Something went wrong. Please try again.");
-        } finally {
-            setLoading(false);
-        }
-    };
+    try {
+      if (isSignIn) {
+        const { error: authError } = await signInWithEmail({ email, password });
+        if (authError) throw authError;
+        await syncSession();
+        await (onSignInSuccess ?? onAuthSuccess)?.();
+      } else {
+        const { error: authError } = await signUpWithEmail({ email, password });
+        if (authError) throw authError;
+        onSignUpSuccess?.();
+      }
+    } catch (authError) {
+      console.error("Auth error", authError);
+      setError(
+        authError.message || "Something went wrong. Please try again."
+      );
+      setLoading(false);
+    }
+  };
 
-    return (
-        <Card className="max-w-md mx-auto">
-            <CardHeader>
-                <CardTitle>{mode === "sign-in" ? "Welcome Back" : "Create an Account"}</CardTitle>
-                <CardDescription>
-                    {mode === "sign-in"
-                        ? "Sign in with your email and password to access your transactions."
-                        : "Sign up with your email and a secure password to start tracking expenses."}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="auth-email">Email</Label>
-                        <Input
-                            id="auth-email"
-                            type="email"
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
-                            required
-                            autoComplete="email"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="auth-password">Password</Label>
-                        <Input
-                            id="auth-password"
-                            type="password"
-                            value={password}
-                            onChange={(event) => setPassword(event.target.value)}
-                            required
-                            autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
-                        />
-                    </div>
-                    {mode === "sign-up" && (
-                        <div className="space-y-2">
-                            <Label htmlFor="auth-confirm-password">Confirm Password</Label>
-                            <Input
-                                id="auth-confirm-password"
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(event) => setConfirmPassword(event.target.value)}
-                                required
-                                autoComplete="new-password"
-                            />
-                        </div>
-                    )}
-                    {error && <p className="text-sm text-red-500">{error}</p>}
-                    {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
-                    <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? "Please wait..." : mode === "sign-in" ? "Sign In" : "Sign Up"}
-                    </Button>
-                </form>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-2">
-                <Button
-                    type="button"
-                    variant="ghost"
-                    className="text-sm"
-                    onClick={() => {
-                        resetMessages();
-                        setMode((prev) => (prev === "sign-in" ? "sign-up" : "sign-in"));
-                    }}
-                >
-                    {mode === "sign-in" ? "Need an account? Sign up" : "Already have an account? Sign in"}
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                    We currently support email/password authentication powered by Supabase.
-                </p>
-            </CardFooter>
-        </Card>
-    );
+  return (
+    <div className="w-full space-y-8">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {isSignIn ? "Welcome back" : "Create your account"}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {isSignIn
+            ? "Sign in with your email to open your dashboard."
+            : "Sign up with your email and a secure password to start tracking."}
+        </p>
+      </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+        <FormField label="Email" htmlFor="auth-email">
+          <Input
+            id="auth-email"
+            type="email"
+            placeholder="you@email.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            autoComplete="email"
+          />
+        </FormField>
+
+        <FormField label="Password" htmlFor="auth-password">
+          <div className="relative">
+            <Input
+              id="auth-password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              autoComplete={isSignIn ? "current-password" : "new-password"}
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <EyeSlashIcon className="size-4" />
+              ) : (
+                <EyeIcon className="size-4" />
+              )}
+            </button>
+          </div>
+        </FormField>
+
+        {!isSignIn && (
+          <FormField label="Confirm password" htmlFor="auth-confirm-password">
+            <Input
+              id="auth-confirm-password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              required
+              autoComplete="new-password"
+            />
+          </FormField>
+        )}
+
+        {error && (
+          <p className="text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
+        {successMessage && (
+          <p className="text-sm text-income">{successMessage}</p>
+        )}
+
+        <Button type="submit" className="w-full" size="lg" disabled={loading}>
+          {loading
+            ? isSignIn
+              ? "Signing in…"
+              : "Creating account…"
+            : isSignIn
+              ? "Sign in"
+              : "Create account"}
+        </Button>
+      </form>
+
+      <p className="text-center text-sm text-muted-foreground">
+        {isSignIn ? (
+          <>
+            New here?{" "}
+            <Link
+              href="/signup"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Create an account
+            </Link>
+          </>
+        ) : (
+          <>
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Sign in
+            </Link>
+          </>
+        )}
+      </p>
+    </div>
+  );
 };
 
 AuthForm.propTypes = {
-    initialMode: PropTypes.oneOf(["sign-in", "sign-up"]),
-    onAuthSuccess: PropTypes.func,
-    onSignInSuccess: PropTypes.func,
-    onSignUpSuccess: PropTypes.func,
+  mode: PropTypes.oneOf(["sign-in", "sign-up"]),
+  onAuthSuccess: PropTypes.func,
+  onSignInSuccess: PropTypes.func,
+  onSignUpSuccess: PropTypes.func,
 };
 
 export default AuthForm;

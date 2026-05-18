@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import PropTypes from "prop-types";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable, DragOverlay } from '@dnd-kit/core';
@@ -13,24 +15,24 @@ const statusConfig = {
     todo: {
         title: "To Do",
         description: "Pending transactions",
-        color: "bg-yellow-100 border-yellow-300",
+        color: "bg-muted/40 ring-1 ring-border",
         icon: Clock,
-        badgeColor: "bg-yellow-500"
+        badgeColor: "bg-muted-foreground text-background",
     },
     "in-progress": {
         title: "In Progress",
         description: "Processing transactions",
-        color: "bg-blue-100 border-blue-300",
+        color: "bg-primary/10 ring-1 ring-primary/30",
         icon: PlayCircle,
-        badgeColor: "bg-blue-500"
+        badgeColor: "bg-primary text-primary-foreground",
     },
     done: {
         title: "Done",
         description: "Completed transactions",
-        color: "bg-green-100 border-green-300",
+        color: "bg-emerald-500/10 ring-1 ring-emerald-500/30",
         icon: CheckCircle,
-        badgeColor: "bg-green-500"
-    }
+        badgeColor: "bg-emerald-600 text-white dark:bg-emerald-500",
+    },
 };
 
 const TransactionCard = ({ transaction, onEdit, onDelete }) => {
@@ -55,18 +57,17 @@ const TransactionCard = ({ transaction, onEdit, onDelete }) => {
         <div
             ref={setNodeRef}
             style={style}
-            className={`p-2 bg-card border rounded-lg shadow-sm hover:shadow-md transition-shadow ${transaction.type === 'income' ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-red-500'
-                }`}
+            className={`rounded-none border bg-card p-2 ring-1 ring-foreground/10 transition-shadow hover:ring-foreground/20 ${transaction.type === "income" ? "border-l-4 border-l-emerald-500" : "border-l-4 border-l-red-500"}`}
         >
             <div className="flex justify-between items-start mb-1">
                 <div className="flex items-center gap-1">
                     <div
                         {...attributes}
                         {...listeners}
-                        className="cursor-grab hover:cursor-grabbing p-1 hover:bg-gray-100 rounded"
+                        className="cursor-grab rounded p-1 hover:bg-muted"
                         title="Drag to move between columns"
                     >
-                        <GripVertical className="h-3 w-3 text-gray-400" />
+                        <GripVertical className="h-3 w-3 text-muted-foreground" />
                     </div>
                     <Badge className={`${statusInfo.badgeColor} text-white text-xs px-1 py-0`}>
                         {transaction.type === 'income' ? 'Income' : 'Expense'}
@@ -106,13 +107,13 @@ const TransactionCard = ({ transaction, onEdit, onDelete }) => {
                     <span className="font-semibold text-base">
                         {transaction.currency === 'USD' ? '$' : transaction.currency === 'GBP' ? '£' : '₹'}{transaction.amount.toFixed(2)}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-muted-foreground">
                         {new Date(transaction.date).toLocaleDateString()}
                     </span>
                 </div>
 
                 {transaction.description && (
-                    <p className="text-xs text-gray-600 line-clamp-1">
+                    <p className="text-xs text-muted-foreground line-clamp-1">
                         {transaction.description}
                     </p>
                 )}
@@ -143,7 +144,7 @@ const KanbanColumn = ({ status, transactions, onEdit, onDelete }) => {
                     <CardDescription className="text-xs">
                         {statusInfo.description}
                         {isOver && (
-                            <span className="ml-2 text-blue-600 font-medium">
+                            <span className="ml-2 font-medium text-primary">
                                 • Drop here
                             </span>
                         )}
@@ -153,9 +154,9 @@ const KanbanColumn = ({ status, transactions, onEdit, onDelete }) => {
                     <SortableContext items={transactions.map(t => t.id)} strategy={verticalListSortingStrategy}>
                         <div ref={setNodeRef} className="space-y-2 max-h-80 overflow-y-auto">
                             {transactions.length === 0 ? (
-                                <div className="text-center text-gray-500 text-sm py-8">
+                                <div className="py-8 text-center text-sm text-muted-foreground">
                                     {isOver ? (
-                                        <div className="text-blue-600 font-medium">
+                                        <div className="font-medium text-primary">
                                             Drop here to move transaction
                                         </div>
                                     ) : (
@@ -286,12 +287,12 @@ const KanbanBoard = ({ transactions, onEdit, onDelete, onStatusChange, selectedC
                                 return draggingTransaction ? (
                                     <div className="p-2 bg-card border rounded-lg shadow-lg opacity-90 max-w-xs">
                                         <div className="flex items-center gap-2">
-                                            <GripVertical className="h-3 w-3 text-gray-400" />
+                                            <GripVertical className="h-3 w-3 text-muted-foreground" />
                                             <span className="text-sm font-medium">
                                                 {draggingTransaction.type === 'income' ? 'Income' : 'Expense'}: {draggingTransaction.currency === 'USD' ? '$' : draggingTransaction.currency === 'GBP' ? '£' : '₹'}{draggingTransaction.amount.toFixed(2)}
                                             </span>
                                         </div>
-                                        <div className="text-xs text-gray-500 mt-1">
+                                        <div className="mt-1 text-xs text-muted-foreground">
                                             {draggingTransaction.category}
                                         </div>
                                     </div>

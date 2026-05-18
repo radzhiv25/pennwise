@@ -1,6 +1,14 @@
-import { useEffect, useState } from 'react';
+"use client";
+
+import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { currencies } from "../mockData";
 
 const Summary = ({ transactions, selectedCurrency }) => {
@@ -8,72 +16,84 @@ const Summary = ({ transactions, selectedCurrency }) => {
     income: 0,
     expense: 0,
     balance: 0,
-    symbol: '₹'
+    symbol: "₹",
   });
 
-  //   to maintain the total income, total expense, and balance for selected currency
   useEffect(() => {
-    // Filter transactions for the selected currency
-    const currencyTransactions = transactions.filter(transaction =>
-      (transaction.currency || 'INR') === selectedCurrency
+    const currencyTransactions = transactions.filter(
+      (transaction) => (transaction.currency || "INR") === selectedCurrency
     );
 
     const income = currencyTransactions
-      .filter(transaction => transaction.type === 'income')
+      .filter((transaction) => transaction.type === "income")
       .reduce((acc, transaction) => acc + transaction.amount, 0);
 
     const expense = currencyTransactions
-      .filter(transaction => transaction.type === 'expense')
+      .filter((transaction) => transaction.type === "expense")
       .reduce((acc, transaction) => acc + transaction.amount, 0);
 
     setSummary({
       income,
       expense,
       balance: income - expense,
-      symbol: currencies[selectedCurrency]?.symbol || '₹'
+      symbol: currencies[selectedCurrency]?.symbol || "₹",
     });
   }, [transactions, selectedCurrency]);
 
+  const currencyName = currencies[selectedCurrency]?.name || selectedCurrency;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold mb-3 text-center">
-          {currencies[selectedCurrency]?.name || selectedCurrency} Summary
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+    <Card>
+      <CardHeader>
+        <CardTitle>{currencyName} Summary</CardTitle>
+        <CardDescription>Totals for your selected currency</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Card size="sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                Total Income
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {summary.symbol}{summary.income.toFixed(2)}
-              </div>
+              <p className="text-xl font-semibold text-income">
+                {summary.symbol}
+                {summary.income.toFixed(2)}
+              </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Expense</CardTitle>
+          <Card size="sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                Total Expense
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {summary.symbol}{summary.expense.toFixed(2)}
-              </div>
+              <p className="text-xl font-semibold text-expense">
+                {summary.symbol}
+                {summary.expense.toFixed(2)}
+              </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Balance</CardTitle>
+          <Card size="sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                Balance
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                {summary.symbol}{summary.balance.toFixed(2)}
-              </div>
+              <p
+                className={`text-xl font-semibold ${summary.balance >= 0 ? "text-primary" : "text-expense"}`}
+              >
+                {summary.symbol}
+                {summary.balance.toFixed(2)}
+              </p>
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
