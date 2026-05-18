@@ -24,12 +24,15 @@ const TransactionList = ({ transactions, onEdit, onDelete, selectedCurrency, isL
             <p className="text-center text-muted-foreground py-8">No transactions yet. Add your first transaction above!</p>
           ) : (
             filteredTransactions.map((transaction, index) => (
-              <Card key={index} className="border-l-4 border-l-green-500" style={{ borderLeftColor: transaction.type === 'income' ? '#10b981' : '#ef4444' }}>
+              <Card
+                key={index}
+                className={`border-l-4 ${transaction.type === "income" ? "border-l-emerald-500" : "border-l-red-500"}`}
+              >
                 <CardContent className="pt-3">
                   <div className="flex justify-between items-start">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className={`font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                        <span className={`font-semibold ${transaction.type === "income" ? "text-income" : "text-expense"}`}>
                           {transaction.type === 'income' ? 'Income' : 'Expense'}
                         </span>
                         <span className="text-xl font-bold">

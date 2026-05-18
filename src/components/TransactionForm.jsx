@@ -11,13 +11,12 @@ import { mockTransactions, categories } from "../mockData";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Database, Trash2 } from "lucide-react";
+import { FormField } from "@/components/ui/form-field";
+import { DateField } from "@/components/ui/date-field";
+import { Database, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
 
@@ -277,8 +276,11 @@ const TransactionForm = ({ selectedCurrency }) => {
     }
   };
 
+  const currencySymbol =
+    selectedCurrency === "USD" ? "$" : selectedCurrency === "GBP" ? "£" : "₹";
+
   return (
-    <div className="space-y-6">
+    <div className="dashboard-stack">
       <Card>
         <CardHeader>
           <CardTitle>Add Transaction</CardTitle>
@@ -286,18 +288,17 @@ const TransactionForm = ({ selectedCurrency }) => {
             Enter your income or expense details below.
           </CardDescription>
           {error && (
-            <p className="text-sm text-red-500 mt-2">
+            <p className="mt-2 text-sm text-destructive" role="alert">
               {error}
             </p>
           )}
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="type">Transaction Type</Label>
+                    <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField label="Transaction Type" htmlFor="type">
                 <Select value={type} onValueChange={setType}>
-                  <SelectTrigger>
+                  <SelectTrigger id="type">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -305,9 +306,9 @@ const TransactionForm = ({ selectedCurrency }) => {
                     <SelectItem value="expense">Expense</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount ({selectedCurrency === 'USD' ? '$' : selectedCurrency === 'GBP' ? '£' : '₹'})</Label>
+              </FormField>
+
+              <FormField label={`Amount (${currencySymbol})`} htmlFor="amount">
                 <Input
                   type="number"
                   id="amount"
@@ -316,11 +317,11 @@ const TransactionForm = ({ selectedCurrency }) => {
                   placeholder="0.00"
                   required
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
+              </FormField>
+
+              <FormField label="Category" htmlFor="category">
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger>
+                  <SelectTrigger id="category">
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -331,33 +332,15 @@ const TransactionForm = ({ selectedCurrency }) => {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={setDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+              </FormField>
+
+              <FormField label="Date">
+                <DateField value={date} onChange={setDate} />
+              </FormField>
+
+              <FormField label="Status" htmlFor="status">
                 <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger>
+                  <SelectTrigger id="status">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -366,20 +349,21 @@ const TransactionForm = ({ selectedCurrency }) => {
                     <SelectItem value="done">Done</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </FormField>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+
+            <FormField label="Description" htmlFor="description">
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Enter description"
-                rows="3"
+                rows={3}
               />
-            </div>
-            <Button type="submit" className="w-max" disabled={isSyncing}>
-              {isSyncing ? "Saving..." : "Add Transaction"}
+            </FormField>
+
+            <Button type="submit" disabled={isSyncing}>
+              {isSyncing ? "Saving…" : "Add Transaction"}
             </Button>
           </form>
         </CardContent>

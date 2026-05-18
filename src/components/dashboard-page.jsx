@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import { AppShell } from "@/components/app-shell";
 import TransactionForm from "@/components/TransactionForm";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/hooks/use-theme";
@@ -12,6 +11,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { isDarkMode, applyTheme } = useTheme();
   const [selectedCurrency, setSelectedCurrency] = useState("INR");
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
 
   const loadPreferences = useCallback(async () => {
     if (!user) return;
@@ -27,7 +27,7 @@ export default function Dashboard() {
         "No preferences found, falling back to defaults",
         error.message
       );
-      setSelectedCurrency("INR");
+      setPrefsLoaded(true);
       return;
     }
 
@@ -35,6 +35,7 @@ export default function Dashboard() {
     if (data?.currency) {
       setSelectedCurrency(data.currency);
     }
+    setPrefsLoaded(true);
   }, [user, applyTheme]);
 
   const savePreferences = useCallback(
@@ -63,18 +64,18 @@ export default function Dashboard() {
     }
   }, [user, loadPreferences]);
 
-  const toggleDarkMode = async () => {
+  const toggleDarkMode = () => {
     const next = !isDarkMode;
     applyTheme(next);
-    await savePreferences({
+    savePreferences({
       theme: next ? "dark" : "light",
       currency: selectedCurrency,
     });
   };
 
-  const handleCurrencyChange = async (currency) => {
+  const handleCurrencyChange = (currency) => {
     setSelectedCurrency(currency);
-    await savePreferences({
+    savePreferences({
       theme: isDarkMode ? "dark" : "light",
       currency,
     });
@@ -85,20 +86,20 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <Navbar
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={toggleDarkMode}
-          selectedCurrency={selectedCurrency}
-          onCurrencyChange={handleCurrencyChange}
-          onSignOut={handleSignOut}
-        />
-        <main className="mt-8">
-          <TransactionForm selectedCurrency={selectedCurrency} />
-        </main>
-        <Footer />
-      </div>
-    </div>
+    <AppShell
+      isDarkMode={isDarkMode}
+      onToggleDarkMode={toggleDarkMode}
+      selectedCurrency={selectedCurrency}
+      onCurrencyChange={handleCurrencyChange}
+      onSignOut={handleSignOut}
+    >
+      {!prefsLoaded ? (
+        <p className="text-sm text-muted-foreground animate-pulse">
+          Loading your dashboard…
+        </p>
+      ) : (
+        <TransactionForm selectedCurrency={selectedCurrency} />
+      )}
+    </AppShell>
   );
 }

@@ -9,9 +9,8 @@ export function MarketingShell({ children }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto flex min-h-screen w-full max-w-[50vw] flex-col px-6 py-8 sm:px-10 sm:py-12 max-lg:max-w-xl">
+      <div className="shell-constrained">
         <Navbar
-          variant="minimal"
           isDarkMode={isDarkMode}
           onToggleDarkMode={toggleTheme}
         />
