@@ -60,7 +60,7 @@ const AuthForm = ({
   };
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-8 border p-4">
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">
           {isSignIn ? "Welcome back" : "Create your account"}
@@ -72,7 +72,7 @@ const AuthForm = ({
         </p>
       </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <FormField label="Email" htmlFor="auth-email">
           <Input
             id="auth-email"

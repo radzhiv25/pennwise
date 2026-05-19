@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TbMoneybag } from "react-icons/tb";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/context/AuthContext";
 import PropTypes from "prop-types";
@@ -38,8 +39,9 @@ const Navbar = ({
     <header className="flex items-center justify-between gap-4">
       <Link
         href={user ? "/app" : "/"}
-        className="text-sm font-semibold tracking-tight text-foreground"
+        className="text-sm font-semibold tracking-tight text-foreground flex items-center gap-1"
       >
+        <TbMoneybag className="size-4 shrink-0" aria-hidden />
         PennWise
       </Link>
 
