@@ -70,7 +70,7 @@ export function LandingContent() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-3">
         <Card size="sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-1.5 text-sm">
