@@ -36,7 +36,7 @@ const Navbar = ({
   const isLanding = useMemo(() => pathname === "/", [pathname]);
 
   return (
-    <header className="flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 -mx-6 flex items-center justify-between gap-4 border-b border-border bg-background px-6 py-2.5 backdrop-blur-sm supports-[backdrop-filter]:bg-background/95 sm:-mx-10 sm:px-10">
       <Link
         href={user ? "/app" : "/"}
         className="text-sm font-semibold tracking-tight text-foreground flex items-center gap-1"

@@ -23,7 +23,7 @@ export function AppShell({
           onSignOut={onSignOut}
           showCurrency
         />
-        <main className="mt-10 flex flex-1 flex-col">{children}</main>
+        <main className="flex flex-1 flex-col pt-4">{children}</main>
         <Footer />
       </div>
     </div>

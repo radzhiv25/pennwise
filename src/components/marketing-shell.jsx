@@ -14,7 +14,9 @@ export function MarketingShell({ children }) {
           isDarkMode={isDarkMode}
           onToggleDarkMode={toggleTheme}
         />
-        <main className="mt-10 flex flex-1 flex-col">{children}</main>
+        <main className="flex flex-1 flex-col items-center justify-center px-0 pb-8 pt-4">
+          {children}
+        </main>
         <Footer />
       </div>
     </div>
