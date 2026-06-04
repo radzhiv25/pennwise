@@ -6,7 +6,6 @@ import Summary from "./Summary";
 import TransactionList from "./TransactionList";
 import Chart from "./Chart";
 import EditTransactionDialog from "./EditTransactionDialog";
-import KanbanBoard from "./KanbanBoard";
 import { mockTransactions, categories } from "../mockData";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,6 @@ const TransactionForm = ({ selectedCurrency }) => {
   const [category, setCategory] = useState("");
   const [date, setDate] = useState(new Date());
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState("todo");
   const [transactions, setTransactions] = useState([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
@@ -90,7 +88,6 @@ const TransactionForm = ({ selectedCurrency }) => {
       category,
       date: format(date, "yyyy-MM-dd"),
       description,
-      status,
       currency: selectedCurrency,
     };
 
@@ -109,7 +106,6 @@ const TransactionForm = ({ selectedCurrency }) => {
       setCategory("");
       setDate(new Date());
       setDescription("");
-      setStatus("todo");
     }
 
     setIsSyncing(false);
@@ -159,7 +155,6 @@ const TransactionForm = ({ selectedCurrency }) => {
         category: updatedTransaction.category,
         date: updatedTransaction.date,
         description: updatedTransaction.description,
-        status: updatedTransaction.status,
         currency: updatedTransaction.currency,
       })
       .eq("id", updatedTransaction.id)
@@ -194,7 +189,7 @@ const TransactionForm = ({ selectedCurrency }) => {
     setIsSyncing(true);
     setError(null);
 
-    const payload = mockTransactions.map(({ id, ...rest }) => ({
+    const payload = mockTransactions.map(({ id, status, ...rest }) => ({
       user_id: user.id,
       ...rest,
     }));
@@ -228,6 +223,62 @@ const TransactionForm = ({ selectedCurrency }) => {
     setIsSyncing(false);
   };
 
+  const handleImportTransactions = async (rows) => {
+    if (!requireUser()) {
+      return {
+        imported: 0,
+        errors: [{ message: "You must be logged in to import transactions." }],
+      };
+    }
+
+    setIsSyncing(true);
+    setError(null);
+
+    const payload = rows.map((row) => ({
+      user_id: user.id,
+      type: row.type,
+      amount: row.amount,
+      category: row.category,
+      date: row.date,
+      description: row.description,
+      currency: row.currency,
+    }));
+
+    const { data, error } = await supabase
+      .from("transactions")
+      .insert(payload)
+      .select();
+
+    if (error) {
+      console.error("Error importing transactions:", error);
+      setError("Failed to import transactions. Please try again.");
+      setIsSyncing(false);
+      return {
+        imported: 0,
+        errors: [{ message: "Import failed. Check your CSV and try again." }],
+      };
+    }
+
+    setTransactions((prev) => {
+      const merged = [...prev];
+      const indexById = new Map(merged.map((item, index) => [item.id, index]));
+
+      (data || []).forEach((transaction) => {
+        const existingIndex = indexById.get(transaction.id);
+        if (existingIndex === undefined) {
+          merged.push(transaction);
+        } else {
+          merged[existingIndex] = transaction;
+        }
+      });
+
+      return merged.sort((a, b) => new Date(b.date) - new Date(a.date));
+    });
+
+    setIsSyncing(false);
+    return { imported: data?.length ?? 0, errors: [] };
+  };
+
   //   to clear all data
   const handleClearData = async () => {
     if (!requireUser()) return;
@@ -248,32 +299,6 @@ const TransactionForm = ({ selectedCurrency }) => {
     }
 
     setIsSyncing(false);
-  };
-
-  //   to handle status change from Kanban board
-  const handleStatusChange = async (transactionId, newStatus) => {
-    if (!requireUser()) return;
-
-    setError(null);
-
-    const { data, error } = await supabase
-      .from("transactions")
-      .update({ status: newStatus })
-      .eq("id", transactionId)
-      .eq("user_id", user.id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error updating status:", error);
-      setError("Failed to update transaction status. Please try again.");
-    } else if (data) {
-      setTransactions((prev) =>
-        prev.map((transaction) =>
-          transaction.id === data.id ? data : transaction
-        )
-      );
-    }
   };
 
   const currencySymbol =
@@ -337,19 +362,6 @@ const TransactionForm = ({ selectedCurrency }) => {
               <FormField label="Date">
                 <DateField value={date} onChange={setDate} />
               </FormField>
-
-              <FormField label="Status" htmlFor="status">
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger id="status">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todo">To Do</SelectItem>
-                    <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="done">Done</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormField>
             </div>
 
             <FormField label="Description" htmlFor="description">
@@ -358,7 +370,7 @@ const TransactionForm = ({ selectedCurrency }) => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Enter description"
-                rows={3}
+                rows={2}
               />
             </FormField>
 
@@ -369,50 +381,51 @@ const TransactionForm = ({ selectedCurrency }) => {
         </CardContent>
       </Card>
 
+      <Summary transactions={transactions} selectedCurrency={selectedCurrency} />
+      <Chart transactions={transactions} selectedCurrency={selectedCurrency} />
+
+      <TransactionList
+        transactions={transactions}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onImportTransactions={handleImportTransactions}
+        selectedCurrency={selectedCurrency}
+        isLoading={isLoading}
+        isImporting={isSyncing}
+      />
+
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="h-5 w-5" />
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Database className="h-4 w-4" />
             Data Management
           </CardTitle>
-          <CardDescription>
-            Load sample data to test the application or clear all data to start fresh.
-          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
+        <CardContent className="pt-0">
+          <div className="flex flex-wrap gap-2">
             <Button
               onClick={handleLoadMockData}
               variant="outline"
-              className="flex items-center gap-2"
+              size="sm"
+              className="gap-2 text-xs"
               disabled={isSyncing}
             >
-              <Database className="h-4 w-4" />
+              <Database className="h-3.5 w-3.5" />
               Load Mock Data
             </Button>
             <Button
               onClick={handleClearData}
               variant="destructive"
-              className="flex items-center gap-2"
+              size="sm"
+              className="gap-2 text-xs"
               disabled={isSyncing}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
               Clear All Data
             </Button>
           </div>
         </CardContent>
       </Card>
-      <Summary transactions={transactions} selectedCurrency={selectedCurrency} />
-      <Chart transactions={transactions} selectedCurrency={selectedCurrency} />
-      <KanbanBoard
-        transactions={transactions}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onStatusChange={handleStatusChange}
-        selectedCurrency={selectedCurrency}
-        isLoading={isLoading}
-      />
-      <TransactionList transactions={transactions} onEdit={handleEdit} onDelete={handleDelete} selectedCurrency={selectedCurrency} isLoading={isLoading} />
 
       <EditTransactionDialog
         isOpen={isEditDialogOpen}

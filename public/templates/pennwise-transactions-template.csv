@@ -1,0 +1,4 @@
+type,amount,category,date,description,currency
+income,5000,Salary,2024-01-15,Monthly salary,INR
+expense,1200,Rent,2024-01-01,,INR
+expense,45.50,Groceries,2024-01-16,Weekly shop,USD
