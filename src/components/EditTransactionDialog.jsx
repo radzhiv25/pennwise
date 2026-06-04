@@ -24,7 +24,6 @@ const EditTransactionDialog = ({
     const [category, setCategory] = useState("");
     const [date, setDate] = useState(new Date());
     const [description, setDescription] = useState("");
-    const [status, setStatus] = useState("todo");
     const [currency, setCurrency] = useState("INR");
 
     useEffect(() => {
@@ -34,7 +33,6 @@ const EditTransactionDialog = ({
             setCategory(transaction.category);
             setDate(new Date(transaction.date));
             setDescription(transaction.description);
-            setStatus(transaction.status || "todo");
             setCurrency(transaction.currency || "INR");
         }
     }, [transaction]);
@@ -49,7 +47,6 @@ const EditTransactionDialog = ({
             category,
             date: format(date, 'yyyy-MM-dd'),
             description,
-            status,
             currency,
         };
 
@@ -125,19 +122,6 @@ const EditTransactionDialog = ({
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-status">Status</Label>
-                            <Select value={status} onValueChange={setStatus}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="todo">To Do</SelectItem>
-                                    <SelectItem value="in-progress">In Progress</SelectItem>
-                                    <SelectItem value="done">Done</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
                         <FormField label="Date">
                             <DateField value={date} onChange={setDate} />
                         </FormField>
@@ -176,7 +160,6 @@ EditTransactionDialog.propTypes = {
         category: PropTypes.string.isRequired,
         date: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]).isRequired,
         description: PropTypes.string,
-        status: PropTypes.string,
         currency: PropTypes.string,
     }),
     onSave: PropTypes.func.isRequired,
